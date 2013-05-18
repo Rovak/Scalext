@@ -8,7 +8,9 @@ trait Base {
   def toJson: JsValue
 }
 
-case class Panel(title: String, layout: String = "fit") extends Base {
+case class Panel() extends Base {
+
+  var title = ""
 
   def toJson = {
 

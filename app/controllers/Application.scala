@@ -14,11 +14,11 @@ object Application extends Controller {
 
   def index = Action {
 
-    var testPanel1 = Panel("Root")
-    testPanel1 += Panel("SubChild")
-    testPanel1 += Panel("SubChild")
-    testPanel1 += Panel("SubChild")
-    testPanel1 += Panel("SubChild")
+    var testPanel1 = new Panel { title = "Root" }
+    testPanel1 += new Panel { title = "SubChild" }
+    testPanel1 += new Panel { title = "SubChild" }
+    testPanel1 += new Panel { title = "SubChild" }
+    testPanel1 += new Panel { title = "SubChild" }
 
     Ok(testPanel1.toJson)
   }
