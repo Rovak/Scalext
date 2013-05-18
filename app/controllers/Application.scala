@@ -15,13 +15,6 @@ object Application extends Controller {
   }
 
   def index = Action {
-
-    var testPanel1 = new Panel { title = "Root" }
-    testPanel1 += new Panel { title = "SubChild" }
-    testPanel1 += new Panel { title = "SubChild" }
-    testPanel1 += new Panel { title = "SubChild" }
-    testPanel1 += new Panel { title = "SubChild" }
-
     var gridPanel = new GridPanel {
       title = "Test Titel"
       columns ++= List(
