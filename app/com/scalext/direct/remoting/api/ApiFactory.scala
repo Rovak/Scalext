@@ -85,7 +85,7 @@ object ApiFactory {
         clsName = remotable.name()
       }
 
-      classes += (clsName -> cls)
+      classes += clsName -> cls
     }
 
     classes

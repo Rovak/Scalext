@@ -10,8 +10,7 @@ object Api extends Controller {
   val apiClasses = ApiFactory.getClasses()
 
   val classInstances = apiClasses.map {
-    case (name, cls) =>
-      (name -> cls.newInstance())
+    case (name, cls) => (name -> cls.newInstance())
   }
 
   def directApi = Action {
@@ -36,7 +35,7 @@ object Api extends Controller {
     (rpc \ "data") match {
       case JsArray(elements) => elements.foreach { element =>
         methodParams ::= classOf[String]
-        methodArgs = methodArgs ++ Seq(element)
+        methodArgs = methodArgs ++ Seq(element.toString)
       }
       case _ => // TODO add objects
     }
@@ -48,7 +47,7 @@ object Api extends Controller {
 
     val result = methodResult match {
       case value: String => value
-      case list: List[String] => Json.toJson(list)
+      case _ => ""
     }
 
     Rpc(
@@ -67,6 +66,7 @@ object Api extends Controller {
         case (list, current) => list :+ buildRpc(current).toJson
       }
       case obj: JsObject => buildRpc(obj).toJson
+      case value: JsValue => value
     }
 
     Ok(rpcJson)

@@ -12,19 +12,18 @@ class DirectTest {
   @FormHandler
   def add(item: String): String = {
     itemList ::= item
-    println("added " + item)
-    "1 toegevoegd"
+    "added"
   }
 
   def add(item: String, item2: String): String = {
     itemList ::= item
-    println("added twee" + item)
-    "twee toegevoegd"
+    println(s"added $item")
+    "two added"
   }
 
   def add(obj: Map[String, String]): String = {
     println("added object" + obj)
-    "obj toegevoegd"
+    "obj added"
   }
 
   @Remotable
@@ -40,13 +39,7 @@ class DirectTest {
 class Direct2Test {
 
   @Remotable(name = "gas2")
-  def AddGas(item: String): String = {
-
-    "Er is gas toegevoegd!"
-  }
-
-  @Remotable(name = "gas3")
-  def gasErop(item2: String): String = {
-    "Meeerrr gas erop"
+  def AddItem(item: String) = {
+    println(s"Added Item $item")
   }
 }
