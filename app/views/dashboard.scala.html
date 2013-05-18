@@ -1,0 +1,10 @@
+@()
+
+@import play.api.libs.json.Json
+
+@extlayout() {
+    <script type="text/javascript">
+        Ext.direct.Manager.addProvider(@Html(Json.stringify(com.scalext.direct.remoting.api.ApiFactory.config)));
+    </script>
+    <script type="text/javascript" src="@routes.Assets.at("app/App.js")"></script>
+}
