@@ -14,7 +14,7 @@ object Api extends Controller {
   }
 
   def directApi = Action {
-    Ok(ApiFactory.config)
+    Ok(ApiFactory.config.toJson)
   }
 
   /**

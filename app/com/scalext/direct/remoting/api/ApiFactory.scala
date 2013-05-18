@@ -84,35 +84,34 @@ object ApiFactory {
       if (remotable != null && !remotable.name().isEmpty) {
         clsName = remotable.name()
       }
-
       classes += clsName -> cls
     }
 
     classes
   }
 
-  def config: JsObject = {
+  /**
+   * Direct Api Configuration
+   */
+  def config: Api = {
 
-    var actions = Json.obj()
+    var actions = List[Action]()
 
     getClasses().foreach {
       case (className, cls) =>
-
-        actions += (className -> cls.getDeclaredMethods.foldLeft(Json.arr()) {
-          case (list, method: java.lang.reflect.Method) if (method.getAnnotation(classOf[Remotable]) != null) =>
-            var remotable = method.getAnnotation(classOf[Remotable])
-            var methodName = if (!remotable.name().isEmpty) remotable.name() else method.getName
-            list :+ Method(
-              methodName,
-              method.getParameterTypes.length).toApiJson
-          case (list, _) => list
-        })
+        actions ::= Action(
+          className,
+          cls.getDeclaredMethods.foldLeft(List[Method]()) {
+            // Only @Remotable methods
+            case (list, method: java.lang.reflect.Method) if (method.getAnnotation(classOf[Remotable]) != null) =>
+              var remotable = method.getAnnotation(classOf[Remotable])
+              var methodName = if (!remotable.name().isEmpty) remotable.name() else method.getName
+              list :+ Method(methodName, method.getParameterTypes.length)
+            case (list, _) => list
+          })
     }
 
-    Json.obj(
-      "type" -> "remoting",
-      "url" -> routes.Api.directApi().url,
-      "actions" -> actions)
+    Api(actions)
   }
 
 }

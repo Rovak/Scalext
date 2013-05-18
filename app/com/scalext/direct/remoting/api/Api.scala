@@ -1,15 +1,17 @@
 package com.scalext.direct.remoting.api
 
 import play.api.libs.json.Json
+import com.scalext.controllers.routes
 
-class Api {
+case class Api(var actions: List[Action] = List()) {
 
-  var url = ""
+  var url = routes.Api.directApi().url
   var widgetType = "remoting"
-  var actions = List[Action]()
 
   def toJson = Json.obj(
     "url" -> url,
     "type" -> widgetType,
-    "actions" -> Json.arr(actions.map(_.toApiJson)))
+    "actions" -> actions.foldLeft(Json.obj()) {
+      case (list, action) => list ++ action.toDirectApi
+    })
 }
