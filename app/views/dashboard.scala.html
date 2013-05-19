@@ -3,8 +3,15 @@
 @import play.api.libs.json.Json
 
 @extlayout() {
-    <script type="text/javascript">
-        Ext.direct.Manager.addProvider(@Html(Json.stringify(com.scalext.direct.remoting.api.ApiFactory.config)));
-    </script>
-    <script type="text/javascript" src="@routes.Assets.at("app/App.js")"></script>
+    
+        <link rel="stylesheet" type="text/css" href="@routes.Assets.at("desktop/css/desktop.css")" />
+        <script type="text/javascript">
+            Ext.direct.Manager.addProvider(@Html(Json.stringify(com.scalext.direct.remoting.api.ApiFactory.config.toJson)));
+            Ext.Loader.setPath({
+                'Ext.ux.desktop': 'assets/desktop/js',
+                MyDesktop: '@routes.Assets.at("desktop")',
+                'Ext.ux' : '@routes.Assets.at("Ext.ux")'
+            });   
+        </script>
+        <script type="text/javascript" src="@routes.Assets.at("app/App.js")"></script>
 }

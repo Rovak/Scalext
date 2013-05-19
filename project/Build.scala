@@ -10,7 +10,9 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     // Add your project dependencies here,
     jdbc,
-    anorm
+    anorm,
+    "commons-io" % "commons-io" % "2.1",
+    "org.apache.commons" % "commons-lang3" % "3.1"
   )
 
 

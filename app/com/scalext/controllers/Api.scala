@@ -35,7 +35,9 @@ object Api extends Controller {
     (rpc \ "data") match {
       case JsArray(elements) => elements.foreach { element =>
         methodParams ::= classOf[String]
-        methodArgs = methodArgs ++ Seq(element.toString)
+        methodArgs = methodArgs ++ Seq(element match {
+          case JsString(value) => value
+        })
       }
       case _ => // TODO add objects
     }

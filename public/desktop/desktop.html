@@ -6,21 +6,39 @@
         <link rel="stylesheet" type="text/css" href="css/desktop.css" />
         <link rel="stylesheet" media="screen" href="http://cdn.sencha.io/ext-4.2.0-gpl/resources/css/ext-all-neptune-debug.css">
         <script src="http://cdn.sencha.io/ext-4.2.0-gpl/ext-all.js"></script>
-        <!-- </x-bootstrap> -->
         <script type="text/javascript">
             Ext.Loader.setPath({
                 'Ext.ux.desktop': 'js',
-                MyDesktop: ''
+                MyDesktop: '',
+                'Ext.ux' : '../Ext.ux'
             });
 
-            Ext.require('MyDesktop.App');
+            Ext.require([
+                'Ext.ux.Terminal',
+                'MyDesktop.App'
+            ]);
 
             var myDesktopApp;
             Ext.onReady(function() {
                 myDesktopApp = new MyDesktop.App();
+                Ext.create('Ext.Window', {
+                    layout: 'fit',
+                    title: 'Terminal',
+                    width: 600,
+                    height: 400,
+                    items: [
+                        {
+                            xtype: 'terminal',
+                        }
+                    ],
+                    listeners: {
+                        activate: function(ev) {
+                            this.getEl().down('.cursor').focus()
+                        }
+                    }
+                }).show();
             });
         </script>
-        <!-- </x-compile> -->
     </head>
     <body>
     </body>

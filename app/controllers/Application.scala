@@ -7,10 +7,15 @@ import play.api.mvc.WebSocket
 import play.api.libs.json.JsValue
 import com.scalext.frontend.grid.{ Panel => GridPanel }
 import com.scalext.frontend.grid.Column
+import game.actors.LiveActor
+import game.actors.UpdateStatus
 
 object Application extends Controller {
 
   def dashboard = Action {
+
+    LiveActor.actor ! UpdateStatus("User joined..")
+
     Ok(views.html.dashboard())
   }
 
