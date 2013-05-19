@@ -7,6 +7,8 @@ import com.scalext.direct.remoting.api.Rpc
 import com.google.gson.GsonBuilder
 import com.google.gson.FieldNamingPolicy
 import com.scalext.direct.remoting.api.RpcResult
+import com.scalext.direct.remoting.api.FormResult
+import views.html.defaultpages.badRequest
 
 object Api extends Controller {
 
@@ -25,34 +27,53 @@ object Api extends Controller {
    */
   def dispatchRpc(rpc: Rpc): RpcResult = {
 
-    var methodParams = List[Class[_]]()
-    var methodArgs = Seq[Object]()
+    val cls = apiClasses(rpc.action)
+    val methodInstance = cls.getDeclaredMethods().find(method => method.getName() == rpc.method).get
 
-    rpc.data match {
-      case JsArray(elements) => elements.foreach { element =>
-        methodParams ::= classOf[String]
-        methodArgs = methodArgs ++ Seq(element match {
-          case JsString(value) => value
-        })
-      }
-      case _ => // TODO add objects
+    println("found method! " + methodInstance)
+
+    var methodParams = methodInstance.getParameterTypes()
+    var methodArgs = List[Any]()
+
+    methodArgs = rpc.data match {
+      case JsArray(elements) =>
+        elements.zipWithIndex.foldLeft(List[Any]()) {
+          case (current, (value, index)) =>
+            current :+ gson.fromJson(Json.stringify(value), methodParams(index))
+        }
     }
 
     if (!apiClasses.contains(rpc.action)) {
       throw new Exception(s"Action ${rpc.action} not found")
     }
 
-    val cls = apiClasses(rpc.action)
+    println("invoking " + methodArgs)
 
-    val methodInstance = cls.getDeclaredMethod(rpc.method, methodParams: _*)
     val methodResult = methodInstance.invoke(
       classInstances(rpc.action),
       methodArgs.asInstanceOf[Seq[Object]]: _*)
 
+    println("method result " + methodResult)
+
     val result: JsValue = methodResult match {
-      case list: List[Any] => Json.parse(gson.toJson(list.toArray[Any]))
-      case _ => Json.parse(gson.toJson(methodResult))
+      case FormResult(formResult, success, errors) =>
+        var resul = if (formResult == null) JsNull else Json.parse(gson.toJson(formResult))
+        var jsonResult = Json.obj(
+          "success" -> success,
+          "data" -> resul)
+        println("json result " + jsonResult)
+        if (!errors.isEmpty) jsonResult += "errors" -> errors.foldLeft(Json.obj()) {
+          case (current, (key, value)) =>
+            current ++ Json.obj(key -> value)
+        }
+        jsonResult
+      case list: List[Any] =>
+        Json.parse(gson.toJson(list.toArray[Any]))
+      case _ =>
+        Json.parse(gson.toJson(methodResult))
     }
+
+    println("Result! " + result)
 
     RpcResult(rpc, result)
   }
@@ -67,23 +88,54 @@ object Api extends Controller {
       id = (rpc \ "tid").as[Int],
       action = (rpc \ "action").as[String],
       method = (rpc \ "method").as[String],
-      data = (rpc \ "data"))
+      data = (rpc \ "data") match {
+        case arr: JsArray => arr
+        case _ => Json.arr()
+      })
+  }
+
+  // Some(Map(extType -> List(rpc), extUpload -> List(false), extAction -> List(Scalext.example.Profile), extMethod -> List(updateBasicInfo), extTID -> List(3)))
+
+  var extKeys = Array("extType", "extUpload", "extMethod", "extTID", "extAction")
+
+  /**
+   * Build and execute an RPC request from the given FORM Request
+   *
+   * @param rpc a single RPC
+   */
+  def buildRpc(post: Map[String, Seq[String]]): Rpc = {
+    Rpc(
+      id = post("extTID").mkString.toInt,
+      action = post("extAction").mkString,
+      method = post("extMethod").mkString,
+      data = Json.arr(Json.toJson(post.filterNot(key => extKeys.contains(key._1)).map(row => (row._1 -> row._2.mkString)))))
   }
 
   /**
    * Execute a JSON request
    */
-  def executeApi = Action(parse.json) { request =>
-    var rpcJson = request.body match {
-      case JsArray(elements) => elements.foldLeft(Json.arr()) {
-        case (list, current) =>
-          list :+ dispatchRpc(buildRpc(current)).toJson
-      }
-      case obj: JsObject => dispatchRpc(buildRpc(obj)).toJson
-      case value: JsValue => value
+  def executeApi = Action { request =>
+
+    request.contentType.get match {
+      case "application/x-www-form-urlencoded" =>
+        var post = request.body.asFormUrlEncoded.get
+        var rpcJson = buildRpc(post)
+        Ok(dispatchRpc(rpcJson).toJson)
+      case "application/json" =>
+        var rpcJson = request.body.asJson.get match {
+          case JsArray(elements) => elements.foldLeft(Json.arr()) {
+            case (list, current) =>
+              list :+ dispatchRpc(buildRpc(current)).toJson
+          }
+          case obj: JsObject => dispatchRpc(buildRpc(obj)).toJson
+          case value: JsValue => value
+        }
+
+        Ok(rpcJson)
+      case _ =>
+        Ok("Invalid Request!")
     }
 
-    Ok(rpcJson)
   }
 
   def formResponse = Action {

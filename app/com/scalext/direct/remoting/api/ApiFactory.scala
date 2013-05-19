@@ -13,6 +13,7 @@ import play.api.Play
 import com.scalext.annotations.Remotable
 import java.lang.reflect.Modifier
 import com.scalext.controllers.routes
+import com.scalext.annotations.FormHandler
 
 // http://www.veebsbraindump.com/2013/01/reflecting-annotations-in-scala-2-10/
 // http://stackoverflow.com/questions/4315678/how-to-use-scalas-singleton-object-types
@@ -103,10 +104,13 @@ object ApiFactory {
           className,
           cls.getDeclaredMethods.foldLeft(List[Method]()) {
             // Only @Remotable methods
-            case (list, method: java.lang.reflect.Method) if (method.getAnnotation(classOf[Remotable]) != null) =>
+            case (list, method: java.lang.reflect.Method) if (method.getAnnotation(classOf[Remotable]) != null || method.getAnnotation(classOf[FormHandler]) != null) =>
               var remotable = method.getAnnotation(classOf[Remotable])
-              var methodName = if (!remotable.name().isEmpty) remotable.name() else method.getName
-              list :+ Method(methodName, method.getParameterTypes.length)
+              var methodName = if (remotable != null && !remotable.name().isEmpty) remotable.name() else method.getName
+              list :+ Method(
+                methodName,
+                method.getParameterTypes.length,
+                method.getAnnotation(classOf[FormHandler]) != null)
             case (list, _) => list
           })
     }

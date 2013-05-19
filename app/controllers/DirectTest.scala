@@ -9,7 +9,6 @@ class DirectTest {
   private var itemList = List[String]()
 
   @Remotable
-  @FormHandler
   def add(item: String): String = {
     itemList ::= item
     "added"

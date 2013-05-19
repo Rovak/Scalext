@@ -8,5 +8,8 @@ POST    /api                        com.scalext.controllers.Api.executeApi
 
 GET     /live                       controllers.Application.live
 
+# Examples
+GET     /examples                   controllers.Examples.index
+
 # Resources
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
