@@ -5,7 +5,7 @@ import com.scalext.controllers.routes
 
 case class Api(var actions: List[Action] = List()) {
 
-  var url = routes.Api.directApi().url
+  var url = routes.Api.executeApi().url
   var widgetType = "remoting"
 
   def toJson = Json.obj(

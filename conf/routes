@@ -3,7 +3,7 @@ GET     /                           controllers.Application.index
 GET     /dashboard                  controllers.Application.dashboard
 
 # Api 
-GET     /api                        com.scalext.controllers.Api.directApi
+# GET     /api                        com.scalext.controllers.Api.directApi
 POST    /api                        com.scalext.controllers.Api.executeApi
 
 GET     /live                       controllers.Application.live

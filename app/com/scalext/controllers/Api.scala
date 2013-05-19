@@ -6,6 +6,7 @@ import play.api.libs.json._
 import com.scalext.direct.remoting.api.Rpc
 import com.google.gson.GsonBuilder
 import com.google.gson.FieldNamingPolicy
+import com.scalext.direct.remoting.api.RpcResult
 
 object Api extends Controller {
 
@@ -19,26 +20,15 @@ object Api extends Controller {
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
     .create();
 
-  def directApi = Action {
-    Ok(ApiFactory.config.toJson)
-  }
-
   /**
-   * Build and execute an Rpc request with the given JSON object
-   *
-   * @param rpc a single RPC
+   * Dispatches the given RPC by executing the action and method
    */
-  def buildRpc(rpc: JsValue): Rpc = {
-
-    val action = (rpc \ "action").as[String]
-    val method = (rpc \ "method").as[String]
-
-    val cls = apiClasses(action)
+  def dispatchRpc(rpc: Rpc): RpcResult = {
 
     var methodParams = List[Class[_]]()
     var methodArgs = Seq[Object]()
 
-    (rpc \ "data") match {
+    rpc.data match {
       case JsArray(elements) => elements.foreach { element =>
         methodParams ::= classOf[String]
         methodArgs = methodArgs ++ Seq(element match {
@@ -48,20 +38,36 @@ object Api extends Controller {
       case _ => // TODO add objects
     }
 
-    val methodInstance = cls.getDeclaredMethod(method, methodParams: _*)
+    if (!apiClasses.contains(rpc.action)) {
+      throw new Exception(s"Action ${rpc.action} not found")
+    }
+
+    val cls = apiClasses(rpc.action)
+
+    val methodInstance = cls.getDeclaredMethod(rpc.method, methodParams: _*)
     val methodResult = methodInstance.invoke(
-      classInstances(action),
+      classInstances(rpc.action),
       methodArgs.asInstanceOf[Seq[Object]]: _*)
 
     val result: JsValue = methodResult match {
       case list: List[Any] => Json.parse(gson.toJson(list.toArray[Any]))
       case _ => Json.parse(gson.toJson(methodResult))
     }
+
+    RpcResult(rpc, result)
+  }
+
+  /**
+   * Build and execute an RPC request from the given JSON object
+   *
+   * @param rpc a single RPC
+   */
+  def buildRpc(rpc: JsValue): Rpc = {
     Rpc(
       id = (rpc \ "tid").as[Int],
-      action = action,
-      method = method,
-      result = result)
+      action = (rpc \ "action").as[String],
+      method = (rpc \ "method").as[String],
+      data = (rpc \ "data"))
   }
 
   /**
@@ -70,9 +76,10 @@ object Api extends Controller {
   def executeApi = Action(parse.json) { request =>
     var rpcJson = request.body match {
       case JsArray(elements) => elements.foldLeft(Json.arr()) {
-        case (list, current) => list :+ buildRpc(current).toJson
+        case (list, current) =>
+          list :+ dispatchRpc(buildRpc(current)).toJson
       }
-      case obj: JsObject => buildRpc(obj).toJson
+      case obj: JsObject => dispatchRpc(buildRpc(obj)).toJson
       case value: JsValue => value
     }
 
