@@ -10,9 +10,15 @@ Scalext
  * Direct API configuration using annotations
  * DSL for creating Ext JS objects
 
+## Roadmap
+
+ * Unit tests
+ * Support for more frameworks
+ * Expanding DSL
+
 ## Configuration
 
-Most settings can be configuredin the conf/application.conf file
+Most settings can be configured in the conf/application.conf file
 
 ### Direct API
 
