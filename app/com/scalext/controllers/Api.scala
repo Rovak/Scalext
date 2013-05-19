@@ -4,6 +4,8 @@ import play.api.mvc._
 import com.scalext.direct.remoting.api.ApiFactory
 import play.api.libs.json._
 import com.scalext.direct.remoting.api.Rpc
+import com.google.gson.GsonBuilder
+import com.google.gson.FieldNamingPolicy
 
 object Api extends Controller {
 
@@ -12,6 +14,10 @@ object Api extends Controller {
   val classInstances = apiClasses.map {
     case (name, cls) => (name -> cls.newInstance())
   }
+
+  val gson = new GsonBuilder()
+    .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+    .create();
 
   def directApi = Action {
     Ok(ApiFactory.config.toJson)
@@ -47,11 +53,10 @@ object Api extends Controller {
       classInstances(action),
       methodArgs.asInstanceOf[Seq[Object]]: _*)
 
-    val result = methodResult match {
-      case value: String => value
-      case _ => ""
+    val result: JsValue = methodResult match {
+      case list: List[Any] => Json.parse(gson.toJson(list.toArray[Any]))
+      case _ => Json.parse(gson.toJson(methodResult))
     }
-
     Rpc(
       id = (rpc \ "tid").as[Int],
       action = action,

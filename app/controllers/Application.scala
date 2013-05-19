@@ -9,6 +9,8 @@ import com.scalext.frontend.grid.{ Panel => GridPanel }
 import com.scalext.frontend.grid.Column
 import game.actors.LiveActor
 import game.actors.UpdateStatus
+import com.google.gson._
+import com.scalext.direct.remoting.api.Method
 
 object Application extends Controller {
 
@@ -20,6 +22,7 @@ object Application extends Controller {
   }
 
   def index = Action {
+
     var gridPanel = new GridPanel {
       title = "Test Titel"
       columns ++= List(

@@ -12,7 +12,8 @@ object ApplicationBuild extends Build {
     jdbc,
     anorm,
     "commons-io" % "commons-io" % "2.1",
-    "org.apache.commons" % "commons-lang3" % "3.1"
+    "org.apache.commons" % "commons-lang3" % "3.1",
+    "com.google.code.gson" % "gson" % "2.2.3"
   )
 
 
