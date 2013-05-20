@@ -23,7 +23,6 @@ class Form {
   def updateBasicInfo(profile: Profile): FormResult = {
     FormResult(
       null,
-      false,
       errors = Map("name" -> "wrong info"))
   }
 

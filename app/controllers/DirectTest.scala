@@ -14,17 +14,6 @@ class DirectTest {
     "added"
   }
 
-  def add(item: String, item2: String): String = {
-    itemList ::= item
-    println(s"added $item")
-    "two added"
-  }
-
-  def add(obj: Map[String, String]): String = {
-    println("added object" + obj)
-    "obj added"
-  }
-
   @Remotable
   def all(): List[String] = itemList
 

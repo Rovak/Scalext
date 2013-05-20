@@ -1,15 +1,13 @@
 package com.scalext.controllers
 
 import play.api.mvc._
-import com.scalext.direct.remoting.api.ApiFactory
 import play.api.libs.json._
+import com.google.gson._
+import scala.collection.parallel._
 import com.scalext.direct.remoting.api.Rpc
-import com.google.gson.GsonBuilder
-import com.google.gson.FieldNamingPolicy
 import com.scalext.direct.remoting.api.RpcResult
 import com.scalext.direct.remoting.api.FormResult
-import views.html.defaultpages.badRequest
-
+import com.scalext.direct.remoting.api.ApiFactory
 object Api extends Controller {
 
   val apiClasses = ApiFactory.getClasses()
@@ -61,7 +59,6 @@ object Api extends Controller {
         var jsonResult = Json.obj(
           "success" -> success,
           "data" -> resul)
-        println("json result " + jsonResult)
         if (!errors.isEmpty) jsonResult += "errors" -> errors.foldLeft(Json.obj()) {
           case (current, (key, value)) =>
             current ++ Json.obj(key -> value)
@@ -116,6 +113,8 @@ object Api extends Controller {
    */
   def executeApi = Action { request =>
 
+    //collection.parallel.ForkJoinTasks.defaultForkJoinPool.setParallelism(parlevel: Int)
+
     request.contentType.get match {
       case "application/x-www-form-urlencoded" =>
         var post = request.body.asFormUrlEncoded.get
@@ -123,6 +122,12 @@ object Api extends Controller {
         Ok(dispatchRpc(rpcJson).toJson)
       case "application/json" =>
         var rpcJson = request.body.asJson.get match {
+          case JsArray(elements) =>
+            var rpcs = elements.map(buildRpc(_)).toList.toParArray
+            rpcs.tasksupport = new ThreadPoolTaskSupport()
+            rpcs.map(dispatchRpc(_)).foldLeft(Json.arr()) {
+              case (list, current) => list :+ current.toJson
+            }
           case JsArray(elements) => elements.foldLeft(Json.arr()) {
             case (list, current) =>
               list :+ dispatchRpc(buildRpc(current)).toJson

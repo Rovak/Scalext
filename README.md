@@ -9,6 +9,7 @@ Scalext
  * Automatic json serialization of method results
  * Direct API configuration using annotations
  * DSL for creating Ext JS objects
+ * Parallel execution of batched requests
 
 ## Roadmap
 
