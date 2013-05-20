@@ -1,6 +1,7 @@
 package com.scalext.controllers
 
 import play.api.mvc._
+import play.api.Play.current
 import play.api.libs.json._
 import com.google.gson._
 import scala.collection.parallel._
@@ -8,7 +9,10 @@ import com.scalext.direct.remoting.api.Rpc
 import com.scalext.direct.remoting.api.RpcResult
 import com.scalext.direct.remoting.api.FormResult
 import com.scalext.direct.remoting.api.ApiFactory
+
 object Api extends Controller {
+
+  def isDebugMode = (play.api.Play.mode == play.api.Mode.Dev)
 
   val apiClasses = ApiFactory.getClasses()
 
@@ -31,8 +35,6 @@ object Api extends Controller {
     var methodParams = methodInstance.getParameterTypes()
     var methodArgs = List[Any]()
 
-    println(s"found method: $methodInstance => ${rpc.data}")
-
     methodArgs = rpc.data match {
       case JsArray(elements) => {
         elements.zipWithIndex.foldLeft(List[Any]()) {
@@ -48,8 +50,6 @@ object Api extends Controller {
     if (!apiClasses.contains(rpc.action)) {
       throw new Exception(s"Action ${rpc.action} not found")
     }
-
-    println(s"invoking $methodInstance, with $methodArgs")
 
     val methodResult = methodInstance.invoke(
       classInstances(rpc.action),
@@ -140,42 +140,52 @@ object Api extends Controller {
    * Execute a JSON request
    */
   def executeApi = Action { request =>
-    request.contentType.get match {
-      // Default JSON
-      case "application/json" =>
-        var rpcJson = request.body.asJson.get match {
-          case JsArray(elements) =>
-            var rpcs = elements.map(buildRpc(_)).toList.toParArray
-            rpcs.tasksupport = new ThreadPoolTaskSupport()
-            rpcs.map(dispatchRpc(_)).foldLeft(Json.arr()) {
-              case (list, current) => list :+ current.toJson
-            }
-          case obj: JsObject =>
-            dispatchRpc(buildRpc(obj)).toJson
-          case value: JsValue =>
-            value
-        }
-        Ok(rpcJson)
-      // Form Submit
-      case "application/x-www-form-urlencoded" =>
-        var post = request.body.asFormUrlEncoded.get
-        var rpcJson = buildRpc(post)
-        Ok(dispatchRpc(rpcJson).toJson)
-      // Form Upload
-      case "multipart/form-data" =>
-        var postBody = request.body.asMultipartFormData.get
-        var post = postBody.asFormUrlEncoded
-        var rpc = buildRpc(post)
-        var params = List[Any](
-          filterExtKeys(post.map(row => (row._1 -> row._2.mkString))),
-          postBody.files.map(_.ref))
-        rpc.data = params
-        var result = dispatchRpc(rpc)
-        Ok(result.toJson)
-      case _ =>
-        Ok("Invalid Request!")
+    try {
+      request.contentType.get match {
+        // Default JSON
+        case "application/json" =>
+          var rpcJson = request.body.asJson.get match {
+            case JsArray(elements) =>
+              var rpcs = elements.map(buildRpc(_)).toList.toParArray
+              rpcs.tasksupport = new ThreadPoolTaskSupport()
+              rpcs.map(dispatchRpc(_)).foldLeft(Json.arr()) {
+                case (list, current) => list :+ current.toJson
+              }
+            case obj: JsObject =>
+              dispatchRpc(buildRpc(obj)).toJson
+            case value: JsValue =>
+              value
+          }
+          Ok(rpcJson)
+        // Form Submit
+        case "application/x-www-form-urlencoded" =>
+          var post = request.body.asFormUrlEncoded.get
+          var rpcJson = buildRpc(post)
+          Ok(dispatchRpc(rpcJson).toJson)
+        // Form Upload
+        case "multipart/form-data" =>
+          var postBody = request.body.asMultipartFormData.get
+          var post = postBody.asFormUrlEncoded
+          var rpc = buildRpc(post)
+          var params = List[Any](
+            filterExtKeys(post.map(row => (row._1 -> row._2.mkString))),
+            postBody.files.map(_.ref))
+          rpc.data = params
+          var result = dispatchRpc(rpc)
+          Ok(result.toJson)
+        case _ =>
+          throw new Exception("Invalid Request")
+      }
+    } catch {
+      case e: Exception if isDebugMode => Ok(Json.obj(
+        "type" -> "exception",
+        "mesage" -> e.getMessage(),
+        "where" -> e.getStackTraceString))
+      case e: Exception => Ok(Json.obj(
+        "type" -> "exception",
+        "mesage" -> "An unhandled exception occured",
+        "where" -> ""))
     }
-
   }
 
   def buildFormResponse(rpc: String) = {
