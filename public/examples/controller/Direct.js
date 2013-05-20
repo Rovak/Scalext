@@ -4,7 +4,7 @@ Ext.define('ScalextApp.controller.Direct', {
 
     views: [
         'direct.Form'
-        //,'direct.Fileupload'
+        ,'direct.Fileupload'
         ,'direct.Tab'
         //,'direct.Named'
         //,'direct.Grid'

@@ -57,7 +57,7 @@ Ext.define('ScalextApp.view.direct.Form', {
             title: 'Phone Numbers',
             border: false,
             api: {
-                load: 'Scalext.example.Profile.getPhoneInfo'
+                load: Scalext.example.Profile.getPhoneInfo
             },
             bodyPadding: 10,
             defaultType: 'textfield',
@@ -81,7 +81,7 @@ Ext.define('ScalextApp.view.direct.Form', {
             border: false,
             bodyPadding: 10,
             api: {
-                load: 'Scalext.example.Profile.getLocationInfo'
+                load: Scalext.example.Profile.getLocationInfo
             },
             defaultType: 'textfield',
             defaults: {
@@ -116,7 +116,7 @@ Ext.define('ScalextApp.view.direct.Form', {
 
         //window.basicInfo = basicInfo;
         basicInfo.getForm().load();
-        //phoneInfo.getForm().load();
-        //locationInfo.getForm().load();
+        phoneInfo.getForm().load();
+        locationInfo.getForm().load();
     }
 });

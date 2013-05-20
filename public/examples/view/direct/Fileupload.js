@@ -17,8 +17,7 @@ Ext.define('ScalextApp.view.direct.Fileupload', {
             border: false,
             bodyPadding: 10,
             api: {
-                // The server-side must mark the submit handler as a 'formHandler'
-                submit: Application.Direct.form.Upload.uploadFile
+                submit: Scalext.example.Upload.uploadFile
             },
             defaultType: 'fileuploadfield',
             defaults: {
@@ -51,16 +50,16 @@ Ext.define('ScalextApp.view.direct.Fileupload', {
                         handler: function() {
                             basicInfo.getForm().submit({
                                 success: function(form, action) {
-                                    Ext.Msg.alert('Success', action.result.msg);
+                                    Ext.Msg.alert('Success', action.result.data.msg);
                                  },
                                  failure: function(form, action) {
-                                    Ext.Msg.alert('Failure', action.result.msg);
+                                    Ext.Msg.alert('Failure', action.result.data.msg);
                                  }
                              });
                         }
                     }
                 ]
-            }],
+            }]
         });
 
         this.items = [{

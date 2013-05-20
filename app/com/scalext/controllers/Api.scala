@@ -28,16 +28,20 @@ object Api extends Controller {
     val cls = apiClasses(rpc.action)
     val methodInstance = cls.getDeclaredMethods().find(method => method.getName() == rpc.method).get
 
-    println("found method! " + methodInstance)
-
     var methodParams = methodInstance.getParameterTypes()
     var methodArgs = List[Any]()
 
+    println(s"found method: $methodInstance => ${rpc.data}")
+
     methodArgs = rpc.data match {
-      case JsArray(elements) =>
+      case JsArray(elements) => {
         elements.zipWithIndex.foldLeft(List[Any]()) {
-          case (current, (value, index)) =>
-            current :+ gson.fromJson(Json.stringify(value), methodParams(index))
+          case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
+        }
+      }
+      case seq: Seq[_] =>
+        seq.zipWithIndex.foldLeft(List[Any]()) {
+          case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
         }
     }
 
@@ -45,34 +49,56 @@ object Api extends Controller {
       throw new Exception(s"Action ${rpc.action} not found")
     }
 
-    println("invoking " + methodArgs)
+    println(s"invoking $methodInstance, with $methodArgs")
 
     val methodResult = methodInstance.invoke(
       classInstances(rpc.action),
       methodArgs.asInstanceOf[Seq[Object]]: _*)
 
-    println("method result " + methodResult)
+    val result = resultToJson(methodResult)
 
-    val result: JsValue = methodResult match {
+    RpcResult(rpc, result match {
+
+      case value: JsValue =>
+        Json.obj("result" -> value)
+      case obj: JsObject =>
+        obj
+
+    })
+  }
+
+  /**
+   * Value to param
+   */
+  def valueToParam(param: Any, paramType: Class[_]): Any = {
+    param match {
+      case map: Map[_, _] => map
+      case jsval: JsValue => gson.fromJson(Json.stringify(jsval), paramType)
+      case _ => param
+    }
+  }
+
+  def resultToJson(result: Any): JsValue = {
+    result match {
       case FormResult(formResult, success, errors) =>
-        var resul = if (formResult == null) JsNull else Json.parse(gson.toJson(formResult))
         var jsonResult = Json.obj(
-          "success" -> success,
-          "data" -> resul)
-        if (!errors.isEmpty) jsonResult += "errors" -> errors.foldLeft(Json.obj()) {
-          case (current, (key, value)) =>
-            current ++ Json.obj(key -> value)
-        }
+          "success" -> (errors.isEmpty && success),
+          "data" -> resultToJson(formResult))
+        if (!errors.isEmpty)
+          jsonResult += "errors" -> errors.foldLeft(Json.obj()) {
+            case (current, (key, value)) =>
+              current ++ Json.obj(key -> value)
+          }
         jsonResult
       case list: List[Any] =>
         Json.parse(gson.toJson(list.toArray[Any]))
+      case map: Map[_, _] =>
+        Json.toJson(map.asInstanceOf[Map[String, String]])
+      case null =>
+        JsNull
       case _ =>
-        Json.parse(gson.toJson(methodResult))
+        Json.parse(gson.toJson(result))
     }
-
-    println("Result! " + result)
-
-    RpcResult(rpc, result)
   }
 
   /**
@@ -91,10 +117,6 @@ object Api extends Controller {
       })
   }
 
-  // Some(Map(extType -> List(rpc), extUpload -> List(false), extAction -> List(Scalext.example.Profile), extMethod -> List(updateBasicInfo), extTID -> List(3)))
-
-  var extKeys = Array("extType", "extUpload", "extMethod", "extTID", "extAction")
-
   /**
    * Build and execute an RPC request from the given FORM Request
    *
@@ -105,21 +127,21 @@ object Api extends Controller {
       id = post("extTID").mkString.toInt,
       action = post("extAction").mkString,
       method = post("extMethod").mkString,
-      data = Json.arr(Json.toJson(post.filterNot(key => extKeys.contains(key._1)).map(row => (row._1 -> row._2.mkString)))))
+      data = Json.arr(Json.toJson(filterExtKeys(post.map(row => (row._1 -> row._2.mkString))))))
+  }
+
+  var extKeys = Array("extType", "extUpload", "extMethod", "extTID", "extAction")
+
+  def filterExtKeys(data: Map[String, String]): Map[String, String] = {
+    data.filterNot(key => extKeys.contains(key._1))
   }
 
   /**
    * Execute a JSON request
    */
   def executeApi = Action { request =>
-
-    //collection.parallel.ForkJoinTasks.defaultForkJoinPool.setParallelism(parlevel: Int)
-
     request.contentType.get match {
-      case "application/x-www-form-urlencoded" =>
-        var post = request.body.asFormUrlEncoded.get
-        var rpcJson = buildRpc(post)
-        Ok(dispatchRpc(rpcJson).toJson)
+      // Default JSON
       case "application/json" =>
         var rpcJson = request.body.asJson.get match {
           case JsArray(elements) =>
@@ -128,24 +150,37 @@ object Api extends Controller {
             rpcs.map(dispatchRpc(_)).foldLeft(Json.arr()) {
               case (list, current) => list :+ current.toJson
             }
-          case JsArray(elements) => elements.foldLeft(Json.arr()) {
-            case (list, current) =>
-              list :+ dispatchRpc(buildRpc(current)).toJson
-          }
-          case obj: JsObject => dispatchRpc(buildRpc(obj)).toJson
-          case value: JsValue => value
+          case obj: JsObject =>
+            dispatchRpc(buildRpc(obj)).toJson
+          case value: JsValue =>
+            value
         }
-
         Ok(rpcJson)
+      // Form Submit
+      case "application/x-www-form-urlencoded" =>
+        var post = request.body.asFormUrlEncoded.get
+        var rpcJson = buildRpc(post)
+        Ok(dispatchRpc(rpcJson).toJson)
+      // Form Upload
+      case "multipart/form-data" =>
+        var postBody = request.body.asMultipartFormData.get
+        var post = postBody.asFormUrlEncoded
+        var rpc = buildRpc(post)
+        var params = List[Any](
+          filterExtKeys(post.map(row => (row._1 -> row._2.mkString))),
+          postBody.files.map(_.ref))
+        rpc.data = params
+        var result = dispatchRpc(rpc)
+        Ok(result.toJson)
       case _ =>
         Ok("Invalid Request!")
     }
 
   }
 
-  def formResponse = Action {
-    var response = "test"
-    Ok(s"<html><body><textarea>$response</textarea></body></html>")
+  def buildFormResponse(rpc: String) = {
+    var response = rpc.replace("\"", "\\\"")
+    s"<html><body><textarea>$response</textarea></body></html>"
   }
 
 }

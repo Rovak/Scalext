@@ -26,17 +26,20 @@ class Form {
       errors = Map("name" -> "wrong info"))
   }
 
-  @FormHandler
-  def getPhoneInfo(profile: Profile): FormResult = {
-    FormResult(
-      null,
-      errors = Map("name" -> "wrong info"))
+  @Remotable
+  def getPhoneInfo(): FormResult = {
+    FormResult(Map(
+      "office" -> "1-800-CALLEXT",
+      "cell" -> "443-555-1234",
+      "home" -> ""))
   }
 
-  @FormHandler
-  def getLocationInfo(profile: Profile): FormResult = {
-    FormResult(
-      null,
-      errors = Map("name" -> "wrong info"))
+  @Remotable
+  def getLocationInfo(): FormResult = {
+    FormResult(Map(
+      "street" -> "streetval",
+      "city" -> "cityval",
+      "state" -> "stateval",
+      "zip" -> "zival"))
   }
 }

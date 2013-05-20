@@ -5,7 +5,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsArray
 
-case class Rpc(id: Int, action: String, method: String, data: JsArray) {
+case class Rpc(id: Int, action: String, method: String, var data: Any) {
   def toJson: JsObject = Json.obj(
     "type" -> "rpc",
     "tid" -> id,
@@ -13,7 +13,6 @@ case class Rpc(id: Int, action: String, method: String, data: JsArray) {
     "method" -> method)
 }
 
-case class RpcResult(rpc: Rpc, result: JsValue) {
-  def toJson = rpc.toJson ++ Json.obj(
-    "result" -> result)
+case class RpcResult(rpc: Rpc, result: JsObject) {
+  def toJson = rpc.toJson ++ result
 }

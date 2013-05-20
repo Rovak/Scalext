@@ -16,7 +16,7 @@ Ext.define('ScalextApp.view.Viewport', {
             xtype: 'box',
             region: 'north',
             height: 40,
-            html: 'KJ Sencha'
+            html: 'Scalext Example'
         },
         {
             xtype: 'tabpanel',

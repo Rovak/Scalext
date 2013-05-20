@@ -8,7 +8,7 @@ Ext.define('ScalextApp.view.direct.Tab', {
 
     items: [
         { xtype: 'directForm',          title: 'Form' }
-        //,{ xtype: 'directFileupload',    title: 'Fileupload' }
+        ,{ xtype: 'directFileupload',    title: 'Fileupload' }
         //,{ xtype: 'directGrid',          title: 'Grid' }
         //,{ xtype: 'directNamed',         title: 'Named Arguments' }
         //,{ xtype: 'directTree',          title: 'Tree' }
