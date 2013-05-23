@@ -4,11 +4,11 @@ import play.api.mvc._
 import play.api.Play.current
 import play.api.libs.json._
 import com.google.gson._
-import scala.collection.parallel._
 import com.scalext.direct.remoting.api.Rpc
 import com.scalext.direct.remoting.api.RpcResult
 import com.scalext.direct.remoting.api.FormResult
 import com.scalext.direct.remoting.api.ApiFactory
+import scala.collection.parallel.ThreadPoolTaskSupport
 
 object Api extends Controller {
 
@@ -22,7 +22,7 @@ object Api extends Controller {
 
   val gson = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-    .create();
+    .create()
 
   /**
    * Dispatches the given RPC by executing the action and method
@@ -32,7 +32,7 @@ object Api extends Controller {
     val cls = apiClasses(rpc.action)
     val methodInstance = cls.getDeclaredMethods().find(method => method.getName() == rpc.method).get
 
-    var methodParams = methodInstance.getParameterTypes()
+    val methodParams = methodInstance.getParameterTypes()
     var methodArgs = List[Any]()
 
     methodArgs = rpc.data match {
@@ -41,6 +41,7 @@ object Api extends Controller {
           case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
         }
       }
+
       case seq: Seq[_] =>
         seq.zipWithIndex.foldLeft(List[Any]()) {
           case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
@@ -58,12 +59,8 @@ object Api extends Controller {
     val result = resultToJson(methodResult)
 
     RpcResult(rpc, result match {
-
       case value: JsValue =>
         Json.obj("result" -> value)
-      case obj: JsObject =>
-        obj
-
     })
   }
 
