@@ -17,11 +17,15 @@ Scalext
  * Support for more frameworks
  * Expanding DSL
 
-## Configuration
+## Documentation
+
+- [Api](http://ci.razko.nl/job/Scalext/Documentation/index.html)
+
+### Configuration
 
 Most settings can be configured in the conf/application.conf file
 
-### Direct API
+#### Direct API
 
  Classes can be scanned by the Direct API by adding them to the application.conf
 
