@@ -1,0 +1,2 @@
+# Api
+POST    /api                        com.scalext.controllers.Api.executeApi
