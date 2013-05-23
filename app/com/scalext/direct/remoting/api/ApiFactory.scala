@@ -1,7 +1,5 @@
 package com.scalext.direct.remoting.api
 
-import scala.reflect.runtime.universe._
-import controllers.DirectTest
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import com.typesafe.config.ConfigFactory
@@ -14,59 +12,6 @@ import com.scalext.annotations.Remotable
 import java.lang.reflect.Modifier
 import com.scalext.controllers.routes
 import com.scalext.annotations.FormHandler
-
-// http://www.veebsbraindump.com/2013/01/reflecting-annotations-in-scala-2-10/
-// http://stackoverflow.com/questions/4315678/how-to-use-scalas-singleton-object-types
-
-/*
-{
-Ext.app.REMOTING_API = {
-    "url":"remote\/router.php",
-    "type":"remoting",
-    "actions":{
-        "AlbumList":[{
-            "name":"getAll",
-            "len":0
-        },{
-            "name":"add",
-            "len":1
-        }]
-    }
-};
-}
- var actions = Json.obj()
-
-    var classType = universe.typeOf[DirectTest.type]
-
-    // check if not parent method.owner == classType.typeSymbol
-
-    var annos = classType.typeSymbol.asClass.annotations
-
-    var remotableName = ""
-
-    annos.foreach { anno =>
-      remotableName = anno.scalaArgs(0).toString
-      remotableName = remotableName.substring(1, remotableName.length - 1)
-    }
-
-    var methods = List[Method]()
-
-    classType.members.view.foreach {
-      case method: MethodSymbol if !method.isConstructor =>
-        method.annotations.foreach { anno =>
-          var methodName = anno.scalaArgs(0).toString
-          methods ::= Method(methodName.substring(1, methodName.size - 1), method.paramss.size)
-        }
-      case _ =>
-    }
-
-    var methodsArr = Json.arr()
-    methods.foreach { method =>
-      methodsArr = methodsArr :+ method.toApiJson
-    }
-
-    actions = actions + (remotableName -> methodsArr) 
- */
 
 object ApiFactory {
 
