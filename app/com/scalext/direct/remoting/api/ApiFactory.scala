@@ -12,6 +12,7 @@ import com.scalext.annotations.Remotable
 import java.lang.reflect.Modifier
 import com.scalext.controllers.routes
 import com.scalext.annotations.FormHandler
+import java.lang.Thread
 
 object ApiFactory {
 
@@ -24,7 +25,7 @@ object ApiFactory {
     var classes = Map[String, Class[_]]()
 
     directClasses.split(",").foreach { className =>
-      var cls = Class.forName(className)
+      val cls = Thread.currentThread().getContextClassLoader().loadClass(className)
       var clsName = cls.getSimpleName()
       var remotable = cls.getAnnotation(classOf[Remotable])
       if (remotable != null && !remotable.name().isEmpty) {
