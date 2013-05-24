@@ -13,6 +13,6 @@ case class Rpc(id: Int, action: String, method: String, var data: Any) {
     "method" -> method)
 }
 
-case class RpcResult(rpc: Rpc, result: JsObject) {
-  def toJson = rpc.toJson ++ result
+case class RpcResult(rpc: Rpc, result: Any) {
+  def toJson = rpc.toJson
 }

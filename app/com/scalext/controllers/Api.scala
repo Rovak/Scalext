@@ -1,82 +1,39 @@
 package com.scalext.controllers
 
-import play.api.mvc._
-import play.api.Play.current
-import play.api.libs.json._
-import com.google.gson._
-import com.scalext.direct.remoting.api.Rpc
-import com.scalext.direct.remoting.api.RpcResult
-import com.scalext.direct.remoting.api.FormResult
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.GsonBuilder
+import com.scalext.direct.dispatcher.StandardDispatcher
 import com.scalext.direct.remoting.api.ApiFactory
-import scala.collection.parallel.ThreadPoolTaskSupport
+import com.scalext.direct.remoting.api.FormResult
+import com.scalext.direct.remoting.api.Rpc
+import play.api.Play.current
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import play.api.libs.json.Json.toJsFieldJsValueWrapper
+import play.api.mvc.Action
+import play.api.mvc.Controller
+import com.scalext.direct.remoting.api.RpcResult
 
 object Api extends Controller {
 
   def isDebugMode = (play.api.Play.mode == play.api.Mode.Dev)
 
-  val apiClasses = ApiFactory.getClasses()
-
-  val classInstances = apiClasses.map {
-    case (name, cls) => (name -> cls.newInstance())
-  }
+  val dispatcher = new StandardDispatcher(ApiFactory.getClasses())
 
   val gson = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
     .create()
 
   /**
-   * Dispatches the given RPC by executing the action and method
+   * Convert any result to a valid Direct result
    */
-  def dispatchRpc(rpc: Rpc): RpcResult = {
-
-    val cls = apiClasses(rpc.action)
-    val methodInstance = cls.getDeclaredMethods().find(method => method.getName() == rpc.method).get
-
-    val methodParams = methodInstance.getParameterTypes()
-    var methodArgs = List[Any]()
-
-    methodArgs = rpc.data match {
-      case JsArray(elements) => {
-        elements.zipWithIndex.foldLeft(List[Any]()) {
-          case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
-        }
-      }
-
-      case seq: Seq[_] =>
-        seq.zipWithIndex.foldLeft(List[Any]()) {
-          case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
-        }
-    }
-
-    if (!apiClasses.contains(rpc.action)) {
-      throw new Exception(s"Action ${rpc.action} not found")
-    }
-
-    val methodResult = methodInstance.invoke(
-      classInstances(rpc.action),
-      methodArgs.asInstanceOf[Seq[Object]]: _*)
-
-    val result = resultToJson(methodResult)
-
-    RpcResult(rpc, result match {
-      case value: JsValue =>
-        Json.obj("result" -> value)
-    })
-  }
-
-  /**
-   * Value to param
-   */
-  def valueToParam(param: Any, paramType: Class[_]): Any = {
-    param match {
-      case map: Map[_, _] => map
-      case jsval: JsValue => gson.fromJson(Json.stringify(jsval), paramType)
-      case _ => param
-    }
-  }
-
   def resultToJson(result: Any): JsValue = {
     result match {
+      case RpcResult(rpc, data) =>
+        rpc.toJson ++ Json.obj("result" -> resultToJson(data))
       case FormResult(formResult, success, errors) =>
         var jsonResult = Json.obj(
           "success" -> (errors.isEmpty && success),
@@ -87,7 +44,7 @@ object Api extends Controller {
               current ++ Json.obj(key -> value)
           }
         jsonResult
-      case list: List[Any] =>
+      case list: Seq[Any] =>
         Json.parse(gson.toJson(list.toArray[Any]))
       case map: Map[_, _] =>
         Json.toJson(map.asInstanceOf[Map[String, String]])
@@ -120,11 +77,13 @@ object Api extends Controller {
    * @param rpc a single RPC
    */
   def buildRpc(post: Map[String, Seq[String]]): Rpc = {
+    var postData = post.map(row => (row._1 -> row._2.mkString))
+
     Rpc(
-      id = post("extTID").mkString.toInt,
-      action = post("extAction").mkString,
-      method = post("extMethod").mkString,
-      data = Json.arr(Json.toJson(filterExtKeys(post.map(row => (row._1 -> row._2.mkString))))))
+      id = postData("extTID").toInt,
+      action = postData("extAction"),
+      method = postData("extMethod"),
+      data = Json.arr(Json.toJson(filterExtKeys(postData))))
   }
 
   var extKeys = Array("extType", "extUpload", "extMethod", "extTID", "extAction")
@@ -138,50 +97,51 @@ object Api extends Controller {
    */
   def executeApi = Action { request =>
     try {
-      request.contentType.get match {
+      var rpcResults: Seq[Rpc] = request.contentType.get match {
         // Default JSON
         case "application/json" =>
-          var rpcJson = request.body.asJson.get match {
+          request.body.asJson.get match {
             case JsArray(elements) =>
-              var rpcs = elements.map(buildRpc(_)).toList.toParArray
-              rpcs.tasksupport = new ThreadPoolTaskSupport()
-              rpcs.map(dispatchRpc(_)).foldLeft(Json.arr()) {
-                case (list, current) => list :+ current.toJson
-              }
+              elements.map(buildRpc(_))
             case obj: JsObject =>
-              dispatchRpc(buildRpc(obj)).toJson
-            case value: JsValue =>
-              value
+              List(buildRpc(obj))
           }
-          Ok(rpcJson)
         // Form Submit
         case "application/x-www-form-urlencoded" =>
-          var post = request.body.asFormUrlEncoded.get
-          var rpcJson = buildRpc(post)
-          Ok(dispatchRpc(rpcJson).toJson)
+          List(buildRpc(request.body.asFormUrlEncoded.get))
         // Form Upload
         case "multipart/form-data" =>
           var postBody = request.body.asMultipartFormData.get
           var post = postBody.asFormUrlEncoded
           var rpc = buildRpc(post)
-          var params = List[Any](
+          rpc.data = List[Any](
             filterExtKeys(post.map(row => (row._1 -> row._2.mkString))),
             postBody.files.map(_.ref))
-          rpc.data = params
-          var result = dispatchRpc(rpc)
-          Ok(result.toJson)
+          List(rpc)
         case _ =>
           throw new Exception("Invalid Request")
       }
+
+      var results = dispatcher.dispatch(rpcResults)
+
+      if (results.size > 1)
+        Ok(Json.toJson(results.map(resultToJson(_))))
+      else
+        Ok(resultToJson(results.head))
+
     } catch {
-      case e: Exception if isDebugMode => Ok(Json.obj(
-        "type" -> "exception",
-        "mesage" -> e.getMessage(),
-        "where" -> e.getStackTraceString))
-      case e: Exception => Ok(Json.obj(
-        "type" -> "exception",
-        "mesage" -> "An unhandled exception occured",
-        "where" -> ""))
+      // Debug Mode
+      case e: Exception if isDebugMode =>
+        Ok(Json.obj(
+          "type" -> "exception",
+          "mesage" -> e.getMessage(),
+          "where" -> e.getStackTraceString))
+      // Production Mode
+      case e: Exception =>
+        Ok(Json.obj(
+          "type" -> "exception",
+          "mesage" -> "An unhandled exception occured",
+          "where" -> ""))
     }
   }
 

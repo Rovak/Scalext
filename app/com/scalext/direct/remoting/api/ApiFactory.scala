@@ -25,7 +25,7 @@ object ApiFactory {
     var classes = Map[String, Class[_]]()
 
     directClasses.split(",").foreach { className =>
-      val cls = Thread.currentThread().getContextClassLoader().loadClass(className)
+      val cls = Class.forName(className)
       var clsName = cls.getSimpleName()
       var remotable = cls.getAnnotation(classOf[Remotable])
       if (remotable != null && !remotable.name().isEmpty) {
