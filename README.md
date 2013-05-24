@@ -67,7 +67,7 @@ class Form {
 }
 ```
 
-```
+```scala
 @Remotable(name = "Scalext.example.Upload")
 class Upload {
 
@@ -91,5 +91,5 @@ If the method has to read file uploads then make sure the second parameter can h
 
 ## Documentation
 
- * [Api](http://ci.razko.nl/job/Scalext/Documentation/index.html)
- * [Example Project](https://github.com/Rovak/ScalextExample)
+ * [API](http://ci.razko.nl/job/Scalext/Documentation/index.html)
+ * [Example project](https://github.com/Rovak/ScalextExample)
