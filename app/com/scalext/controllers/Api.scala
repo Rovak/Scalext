@@ -21,15 +21,14 @@ object Api extends Controller {
 
   def isDebugMode = (play.api.Play.mode == play.api.Mode.Dev)
 
-  val dispatcher = new StandardDispatcher(ApiFactory.getClasses())
+  val dispatcher = new StandardDispatcher(ApiFactory.classes)
 
   val gson = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
     .create()
 
-  /**
-   * Convert any result to a valid Direct result
-   */
+  /** Convert any result to a valid Direct result
+    */
   def resultToJson(result: Any): JsValue = {
     result match {
       case RpcResult(rpc, data) =>
@@ -55,11 +54,10 @@ object Api extends Controller {
     }
   }
 
-  /**
-   * Build and execute an RPC request from the given JSON object
-   *
-   * @param rpc a single RPC
-   */
+  /** Build and execute an RPC request from the given JSON object
+    *
+    * @param rpc a single RPC
+    */
   def buildRpc(rpc: JsValue): Rpc = {
     Rpc(
       id = (rpc \ "tid").as[Int],
@@ -67,15 +65,14 @@ object Api extends Controller {
       method = (rpc \ "method").as[String],
       data = (rpc \ "data") match {
         case arr: JsArray => arr
-        case _ => Json.arr()
+        case _            => Json.arr()
       })
   }
 
-  /**
-   * Build and execute an RPC request from the given FORM Request
-   *
-   * @param rpc a single RPC
-   */
+  /** Build and execute an RPC request from the given FORM Request
+    *
+    * @param rpc a single RPC
+    */
   def buildRpc(post: Map[String, Seq[String]]): Rpc = {
     var postData = post.map(row => (row._1 -> row._2.mkString))
 
@@ -92,9 +89,8 @@ object Api extends Controller {
     data.filterNot(key => extKeys.contains(key._1))
   }
 
-  /**
-   * Execute a JSON request
-   */
+  /** Execute a JSON request
+    */
   def executeApi = Action { request =>
     try {
       var rpcResults: Seq[Rpc] = request.contentType.get match {

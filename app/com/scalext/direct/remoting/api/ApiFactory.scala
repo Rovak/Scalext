@@ -14,37 +14,34 @@ import com.scalext.controllers.routes
 import com.scalext.annotations.FormHandler
 import java.lang.Thread
 
+/** Builds Direct API configuration
+  */
 object ApiFactory {
 
-  /**
-   * Build classes from the configuration
-   */
-  def getClasses(): Map[String, Class[_]] = {
+  /** Scan classes from the configuration
+    */
+  def classes: Map[String, Class[_]] = {
     val directClasses = Play.configuration.getString("scalext.direct.classes").getOrElse("")
 
-    var classes = Map[String, Class[_]]()
-
-    directClasses.split(",").foreach { className =>
-      val cls = Class.forName(className)
-      var clsName = cls.getSimpleName()
-      var remotable = cls.getAnnotation(classOf[Remotable])
-      if (remotable != null && !remotable.name().isEmpty) {
-        clsName = remotable.name()
-      }
-      classes += clsName -> cls
+    directClasses.split(",").foldLeft(Map[String, Class[_]]()) {
+      case (map, className) =>
+        val cls = Class.forName(className)
+        var clsName = cls.getSimpleName()
+        var remotable = cls.getAnnotation(classOf[Remotable])
+        if (remotable != null && !remotable.name().isEmpty) {
+          clsName = remotable.name()
+        }
+        map + (clsName -> cls)
     }
-
-    classes
   }
 
   /**
-   * Direct Api Configuration
-   */
+    */
   def config: Api = {
 
     var actions = List[Action]()
 
-    getClasses().foreach {
+    classes.foreach {
       case (className, cls) =>
         actions ::= Action(
           className,
