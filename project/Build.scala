@@ -5,7 +5,7 @@ import play.Project._
 object ApplicationBuild extends Build {
 
   val appName         = "scalaext"
-  val appVersion      = "0.1-SNAPSHOT"
+  val appVersion      = "0.1.1"
 
   val appDependencies = Seq(
     jdbc,
