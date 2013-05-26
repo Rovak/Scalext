@@ -22,6 +22,4 @@ case class MessageBox() extends Base {
     "message" -> message)
 
   def show = s"Ext.MessageBox.show(${toJson});"
-
-  override def toString = show
 }
