@@ -15,10 +15,13 @@ import com.scalext.annotations.FormHandler
 import java.lang.Thread
 
 /** Builds Direct API configuration
+  *
+  * Scans classes where are configured in application.conf and builds
+  * configuration based on the given classes and containing annotations
   */
 object ApiFactory {
 
-  /** Scan classes from the configuration
+  /** Returns classes which are configured in the application.conf
     */
   def classes: Map[String, Class[_]] = {
     val directClasses = Play.configuration.getString("scalext.direct.classes").getOrElse("")
@@ -35,12 +38,10 @@ object ApiFactory {
     }
   }
 
-  /**
+  /** Translates a map from the classes method to a Direct API object
     */
   def config: Api = {
-
     var actions = List[Action]()
-
     classes.foreach {
       case (className, cls) =>
         actions ::= Action(

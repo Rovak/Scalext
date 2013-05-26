@@ -1,6 +1,7 @@
-package com.scalext.direct.remoting.api
+package com.scalext.direct.remoting
 
 import play.api.libs.json.Json
+import play.api.libs.json.Json.toJsFieldJsValueWrapper
 
 case class FormResult(result: Any, success: Boolean = true, errors: Map[String, String] = Map()) {
   def toJson = {
