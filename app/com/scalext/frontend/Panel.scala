@@ -1,6 +1,5 @@
 package com.scalext.frontend
 
-import play.api.libs.json._
 
 case class Panel() extends Container {
 

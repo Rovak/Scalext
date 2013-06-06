@@ -1,18 +1,9 @@
 package com.scalext.direct.remoting.api
 
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.impl.ConfigString
-import com.typesafe.config.impl.ConfigString
-import play.Configuration
 import play.api.Play.current
 import play.api.Play
 import com.scalext.annotations.Remotable
-import java.lang.reflect.Modifier
-import com.scalext.controllers.routes
 import com.scalext.annotations.FormHandler
-import java.lang.Thread
 
 /** Builds Direct API configuration
   *
@@ -29,7 +20,7 @@ object ApiFactory {
     directClasses.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
         val cls = Class.forName(className)
-        var clsName = cls.getSimpleName
+        var clsName = cls.getSimpleName()
         var remotable = cls.getAnnotation(classOf[Remotable])
         if (remotable != null && !remotable.name().isEmpty) {
           clsName = remotable.name()

@@ -1,6 +1,6 @@
 package com.scalext.frontend.grid
 
-import com.scalext.frontend.{ Base, Panel => BasePanel }
+import com.scalext.frontend.{ Panel => BasePanel }
 
 class Panel extends BasePanel {
 

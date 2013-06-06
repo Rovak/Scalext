@@ -1,7 +1,5 @@
 package com.scalext.direct.dispatcher
 
-import scala.collection.parallel.ThreadPoolTaskSupport
-import scala.collection.parallel.traversable2ops
 
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
