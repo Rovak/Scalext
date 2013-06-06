@@ -20,7 +20,7 @@ object ApiFactory {
     directClasses.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
         val cls = Class.forName(className)
-        var clsName = cls.getSimpleName()
+        var clsName = cls.getSimpleName
         var remotable = cls.getAnnotation(classOf[Remotable])
         if (remotable != null && !remotable.name().isEmpty) {
           clsName = remotable.name()

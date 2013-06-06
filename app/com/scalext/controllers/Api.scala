@@ -2,7 +2,7 @@ package com.scalext.controllers
 
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
-import com.scalext.direct.dispatcher.StandardDispatcher
+import com.scalext.direct.dispatcher.{ParallelDispatcher, StandardDispatcher}
 import com.scalext.direct.remoting.FormResult
 import com.scalext.direct.remoting.api.ApiFactory
 import com.scalext.direct.remoting.api.Rpc
@@ -21,7 +21,7 @@ import play.api.mvc.Controller
 object Api extends Controller {
 
   def isDebugMode = (play.api.Play.mode == play.api.Mode.Dev)
-  val dispatcher = new StandardDispatcher(ApiFactory.classes)
+  val dispatcher = new ParallelDispatcher(ApiFactory.classes)
   val gson = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
     .create()
