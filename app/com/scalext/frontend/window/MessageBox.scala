@@ -21,5 +21,5 @@ case class MessageBox() extends Base {
     "title" -> title,
     "message" -> message)
 
-  def show = s"Ext.MessageBox.show(${toJson});"
+  def show = s"Ext.MessageBox.show($toJson);"
 }

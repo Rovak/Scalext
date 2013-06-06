@@ -38,9 +38,9 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
   override def dispatch(rpc: Rpc): RpcResult = {
 
     val cls = directClasses(rpc.action)
-    val methodInstance = cls.getDeclaredMethods().find(method => method.getName() == rpc.method).get
+    val methodInstance = cls.getDeclaredMethods.find(method => method.getName == rpc.method).get
 
-    val methodParams = methodInstance.getParameterTypes()
+    val methodParams = methodInstance.getParameterTypes
     var methodArgs = List[Any]()
 
     methodArgs = rpc.data match {

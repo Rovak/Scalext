@@ -3,9 +3,11 @@ package com.scalext.controllers
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
 import com.scalext.direct.dispatcher.StandardDispatcher
-import com.scalext.direct.remoting.api.ApiFactory
 import com.scalext.direct.remoting.FormResult
+import com.scalext.direct.remoting.api.ApiFactory
 import com.scalext.direct.remoting.api.Rpc
+import com.scalext.direct.remoting.api.RpcResult
+
 import play.api.Play.current
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsNull
@@ -15,14 +17,11 @@ import play.api.libs.json.Json
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.mvc.Action
 import play.api.mvc.Controller
-import com.scalext.direct.remoting.api.RpcResult
 
 object Api extends Controller {
 
   def isDebugMode = (play.api.Play.mode == play.api.Mode.Dev)
-
   val dispatcher = new StandardDispatcher(ApiFactory.classes)
-
   val gson = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
     .create()
@@ -71,10 +70,12 @@ object Api extends Controller {
 
   /** Build and execute an RPC request from the given FORM Request
     *
-    * @param rpc a single RPC
+    * @param post Map with Key => Value
     */
-  def buildRpc(post: Map[String, Seq[String]]): Rpc = {
-    var postData = post.map(row => (row._1 -> row._2.mkString))
+  def buildRpc(post: Map[String, Seq[String]]) = {
+
+    // Convert seq to string
+    val postData = post.map(row => (row._1 -> row._2.mkString))
 
     Rpc(
       id = postData("extTID").toInt,
@@ -93,7 +94,7 @@ object Api extends Controller {
     */
   def executeApi = Action { request =>
     try {
-      var rpcResults: Seq[Rpc] = request.contentType.get match {
+      val rpcResults: Seq[Rpc] = request.contentType.get match {
         // Default JSON
         case "application/json" =>
           request.body.asJson.get match {
@@ -107,9 +108,9 @@ object Api extends Controller {
           List(buildRpc(request.body.asFormUrlEncoded.get))
         // Form Upload
         case "multipart/form-data" =>
-          var postBody = request.body.asMultipartFormData.get
-          var post = postBody.asFormUrlEncoded
-          var rpc = buildRpc(post)
+          val postBody = request.body.asMultipartFormData.get
+          val post = postBody.asFormUrlEncoded
+          val rpc = buildRpc(post)
           rpc.data = List[Any](
             filterExtKeys(post.map(row => (row._1 -> row._2.mkString))),
             postBody.files.map(_.ref))
@@ -118,7 +119,7 @@ object Api extends Controller {
           throw new Exception("Invalid Request")
       }
 
-      var results = dispatcher.dispatch(rpcResults)
+      val results = dispatcher.dispatch(rpcResults)
 
       if (results.size > 1)
         Ok(Json.toJson(results.map(resultToJson(_))))
@@ -130,19 +131,19 @@ object Api extends Controller {
       case e: Exception if isDebugMode =>
         Ok(Json.obj(
           "type" -> "exception",
-          "mesage" -> e.getMessage(),
+          "message" -> e.getMessage,
           "where" -> e.getStackTraceString))
       // Production Mode
       case e: Exception =>
         Ok(Json.obj(
           "type" -> "exception",
-          "mesage" -> "An unhandled exception occured",
+          "message" -> "An unhandled exception occured",
           "where" -> ""))
     }
   }
 
   def buildFormResponse(rpc: String) = {
-    var response = rpc.replace("\"", "\\\"")
+    val response = rpc.replace("\"", "\\\"")
     s"<html><body><textarea>$response</textarea></body></html>"
   }
 
