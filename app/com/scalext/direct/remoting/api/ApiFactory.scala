@@ -12,16 +12,12 @@ import com.scalext.annotations.FormHandler
   */
 object ApiFactory {
 
-  /** Returns classes which are configured in the application.conf
-    */
-  def classes: Map[String, Class[_]] = {
-    val directClasses = Play.configuration.getString("scalext.direct.classes").getOrElse("")
-
-    directClasses.split(",").foldLeft(Map[String, Class[_]]()) {
+  def buildClasses(classList: String): Map[String, Class[_]] = {
+    classList.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
         val cls = Class.forName(className)
         var clsName = cls.getSimpleName
-        var remotable = cls.getAnnotation(classOf[Remotable])
+        val remotable = cls.getAnnotation(classOf[Remotable])
         if (remotable != null && !remotable.name().isEmpty) {
           clsName = remotable.name()
         }
@@ -29,7 +25,13 @@ object ApiFactory {
     }
   }
 
-  /** Translates a map from the classes method to a Direct API object
+  /** Returns classes which are configured in the application.conf
+    */
+  def classes: Map[String, Class[_]] = {
+    buildClasses(Play.configuration.getString("scalext.direct.classes").getOrElse(""))
+  }
+
+  /** Translates a map from the classes method to a direct API object
     */
   def config: Api = {
     var actions = List[Action]()
@@ -40,8 +42,8 @@ object ApiFactory {
           cls.getDeclaredMethods.foldLeft(List[Method]()) {
             // Only @Remotable methods
             case (list, method: java.lang.reflect.Method) if (method.getAnnotation(classOf[Remotable]) != null || method.getAnnotation(classOf[FormHandler]) != null) =>
-              var remotable = method.getAnnotation(classOf[Remotable])
-              var methodName = if (remotable != null && !remotable.name().isEmpty) remotable.name() else method.getName
+              val remotable = method.getAnnotation(classOf[Remotable])
+              val methodName = if (remotable != null && !remotable.name().isEmpty) remotable.name() else method.getName
               list :+ Method(
                 methodName,
                 method.getParameterTypes.length,

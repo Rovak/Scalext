@@ -64,11 +64,11 @@ object Api extends Controller {
       method = (rpc \ "method").as[String],
       data = (rpc \ "data") match {
         case arr: JsArray => arr
-        case _            => Json.arr()
+        case _ => Json.arr()
       })
   }
 
-  /** Build and execute an RPC request from the given FORM Request
+  /** Build and execute a RPC request from the given Ext Direct Form Request
     *
     * @param post Map with Key => Value
     */
@@ -86,6 +86,9 @@ object Api extends Controller {
 
   var extKeys = Array("extType", "extUpload", "extMethod", "extTID", "extAction")
 
+  /** Filter post keys which are given by the standard Ext JS Remoting Provider so this data is not being
+    * passed to the direct method which is being called
+    */
   def filterExtKeys(data: Map[String, String]): Map[String, String] = {
     data.filterNot(key => extKeys.contains(key._1))
   }
