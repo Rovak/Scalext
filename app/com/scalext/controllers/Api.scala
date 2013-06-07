@@ -2,21 +2,12 @@ package com.scalext.controllers
 
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
-import com.scalext.direct.dispatcher.{ParallelDispatcher, StandardDispatcher}
-import com.scalext.direct.remoting.FormResult
-import com.scalext.direct.remoting.api.ApiFactory
-import com.scalext.direct.remoting.api.Rpc
-import com.scalext.direct.remoting.api.RpcResult
-
+import com.scalext.direct.dispatcher.ParallelDispatcher
+import com.scalext.direct.remoting.api._
 import play.api.Play.current
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsNull
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.Json.toJsFieldJsValueWrapper
-import play.api.mvc.Action
-import play.api.mvc.Controller
+import play.api.libs.json._
+import play.api.mvc.{Controller, Action}
+import com.scalext.direct.remoting.FormResult
 
 object Api extends Controller {
 
@@ -28,29 +19,27 @@ object Api extends Controller {
 
   /** Convert any result to a valid Direct result
     */
-  def resultToJson(result: Any): JsValue = {
-    result match {
-      case RpcResult(rpc, data) =>
-        rpc.toJson ++ Json.obj("result" -> resultToJson(data))
-      case FormResult(formResult, success, errors) =>
-        var jsonResult = Json.obj(
-          "success" -> (errors.isEmpty && success),
-          "data" -> resultToJson(formResult))
-        if (!errors.isEmpty)
-          jsonResult += "errors" -> errors.foldLeft(Json.obj()) {
-            case (current, (key, value)) =>
-              current ++ Json.obj(key -> value)
-          }
-        jsonResult
-      case list: Seq[Any] =>
-        Json.parse(gson.toJson(list.toArray[Any]))
-      case map: Map[_, _] =>
-        Json.toJson(map.asInstanceOf[Map[String, String]])
-      case null =>
-        JsNull
-      case _ =>
-        Json.parse(gson.toJson(result))
-    }
+  def resultToJson(result: Any): JsValue = result match {
+    case RpcResult(rpc, data) =>
+      rpc.toJson ++ Json.obj("result" -> resultToJson(data))
+    case FormResult(formResult, success, errors) =>
+      var jsonResult = Json.obj(
+        "success" -> (errors.isEmpty && success),
+        "data" -> resultToJson(formResult))
+      if (!errors.isEmpty)
+        jsonResult += "errors" -> errors.foldLeft(Json.obj()) {
+          case (current, (key, value)) =>
+            current ++ Json.obj(key -> value)
+        }
+      jsonResult
+    case list: Seq[Any] =>
+      Json.parse(gson.toJson(list.toArray[Any]))
+    case map: Map[_, _] =>
+      Json.toJson(map.asInstanceOf[Map[String, String]])
+    case null =>
+      JsNull
+    case _ =>
+      Json.parse(gson.toJson(result))
   }
 
   /** Build and execute an RPC request from the given JSON object
@@ -84,7 +73,7 @@ object Api extends Controller {
       data = Json.arr(Json.toJson(filterExtKeys(postData))))
   }
 
-  var extKeys = Array("extType", "extUpload", "extMethod", "extTID", "extAction")
+  val extKeys = Array("extType", "extUpload", "extMethod", "extTID", "extAction")
 
   /** Filter post keys which are given by the standard Ext JS Remoting Provider so this data is not being
     * passed to the direct method which is being called
@@ -105,6 +94,8 @@ object Api extends Controller {
               elements.map(buildRpc(_))
             case obj: JsObject =>
               List(buildRpc(obj))
+            case _ =>
+              throw new Exception("Invalid Json Input")
           }
         // Form Submit
         case "application/x-www-form-urlencoded" =>
@@ -140,7 +131,7 @@ object Api extends Controller {
       case e: Exception =>
         Ok(Json.obj(
           "type" -> "exception",
-          "message" -> "An unhandled exception occured",
+          "message" -> "An unhandled exception occurred",
           "where" -> ""))
     }
   }

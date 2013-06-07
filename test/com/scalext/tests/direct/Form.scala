@@ -1,4 +1,4 @@
-package test.direct
+package com.scalext.tests.direct
 
 import com.scalext.annotations.Remotable
 import com.scalext.direct.remoting.FormResult
