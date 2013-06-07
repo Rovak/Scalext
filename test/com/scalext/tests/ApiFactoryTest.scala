@@ -17,4 +17,19 @@ class ApiFactoryTest extends Specification {
       classes must have key("test.ProfileForm")
     }
   }
+
+  "formhandlers" should {
+
+    "be visible from apifactory" in {
+      val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
+      classes must have key("test.ProfileForm")
+    }
+
+    "recieve formhandler is true when generated from apifactory" in {
+      val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
+      val config = ApiFactory.buildConfigFromClasses(classes)
+      val form = config.flatMap(action => action.methods).find(method => method.formHandler)
+      form must not be beNull
+    }
+  }
 }

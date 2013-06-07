@@ -10,7 +10,7 @@ import com.scalext.direct.remoting.api.RpcResult
 class ParallelDispatcher(directClasses: Map[String, Class[_]]) extends StandardDispatcher(directClasses) {
 
   /**
-   * Dispatch a multiple requests
+   * Dispatch multiple requests
    */
   override def dispatch(rpcs: Seq[Rpc]): Seq[RpcResult] = {
     val rpcList = rpcs.toParArray

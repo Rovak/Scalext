@@ -31,9 +31,10 @@ object ApiFactory {
     buildClasses(Play.configuration.getString("scalext.direct.classes").getOrElse(""))
   }
 
-  /** Translates a map from the classes method to a direct API object
-    */
-  def config: Api = {
+  /**
+   * Build configuration from the given classes
+   */
+  def buildConfigFromClasses(classes: Map[String, Class[_]]): List[Action] = {
     var actions = List[Action]()
     classes.foreach {
       case (className, cls) =>
@@ -50,9 +51,15 @@ object ApiFactory {
                 method.getAnnotation(classOf[FormHandler]) != null)
             case (list, _) => list
           })
-    }
+        }
 
-    Api(actions)
+    actions
+  }
+
+  /** Translates a map from the classes method to a direct API object
+    */
+  def config: Api = {
+    Api(buildConfigFromClasses(classes))
   }
 
 }

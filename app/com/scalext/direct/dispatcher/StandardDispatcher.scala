@@ -24,7 +24,7 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
     .create()
 
   /**
-   * Dispatch a multiple requests
+   * Dispatch multiple requests
    */
   override def dispatch(rpcs: Seq[Rpc]): Seq[RpcResult] = {
     rpcs.map(dispatch(_)).toList
