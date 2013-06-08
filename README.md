@@ -1,4 +1,4 @@
-Scalext
+Scalext [![Build Status](https://www.travis-ci.org/Rovak/Scalext.png?branch=master)](https://www.travis-ci.org/Rovak/Scalext)
 =======
 
  Ext JS Driver for Play Framework 2.1
