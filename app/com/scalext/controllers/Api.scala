@@ -7,11 +7,11 @@ import com.scalext.direct.remoting.api._
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.mvc.{Controller, Action}
-import com.scalext.direct.remoting.FormResult
+import com.scalext.direct.remoting.{RpcResult, Rpc, FormResult}
 
 object Api extends Controller {
 
-  def isDebugMode = (play.api.Play.mode == play.api.Mode.Dev)
+  def isDebugMode = play.api.Play.mode == play.api.Mode.Dev
   val dispatcher = new ParallelDispatcher(ApiFactory.classes)
   val gson = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -64,7 +64,7 @@ object Api extends Controller {
   def buildRpc(post: Map[String, Seq[String]]) = {
 
     // Convert seq to string
-    val postData = post.map(row => (row._1 -> row._2.mkString))
+    val postData = post.map(row => row._1 -> row._2.mkString)
 
     Rpc(
       id = postData("extTID").toInt,
@@ -106,7 +106,7 @@ object Api extends Controller {
           val post = postBody.asFormUrlEncoded
           val rpc = buildRpc(post)
           rpc.data = List[Any](
-            filterExtKeys(post.map(row => (row._1 -> row._2.mkString))),
+            filterExtKeys(post.map(row => row._1  -> row._2.mkString)),
             postBody.files.map(_.ref))
           List(rpc)
         case _ =>

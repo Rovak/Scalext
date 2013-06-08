@@ -1,0 +1,7 @@
+language: scala
+env:
+  - PLAY_VERSION=2.1.1
+before_script: ./travis/setup
+script: ./travis/play-framework/play test
+notifications:
+  email: false

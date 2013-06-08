@@ -1,8 +1,7 @@
 package com.scalext.direct.dispatcher
 
-import com.scalext.direct.remoting.api.Rpc
 import scala.collection.parallel.ThreadPoolTaskSupport
-import com.scalext.direct.remoting.api.RpcResult
+import com.scalext.direct.remoting.{RpcResult, Rpc}
 
 /**
  * Dispatches in a parallel thread pool

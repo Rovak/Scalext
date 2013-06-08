@@ -3,12 +3,11 @@ package com.scalext.direct.dispatcher
 
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
-import com.scalext.direct.remoting.api.Rpc
-import com.scalext.direct.remoting.api.RpcResult
 
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
+import com.scalext.direct.remoting.{RpcResult, Rpc}
 
 /**
  * Default Dispatcher
@@ -16,7 +15,7 @@ import play.api.libs.json.Json
 class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatcher {
 
   val classInstances = directClasses.map {
-    case (name, cls) => (name -> cls.newInstance())
+    case (name, cls) => name -> cls.newInstance()
   }
 
   val gson = new GsonBuilder()

@@ -29,7 +29,7 @@ class ApiFactoryTest extends Specification {
       val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
       val config = ApiFactory.buildConfigFromClasses(classes)
       val form = config.flatMap(action => action.methods).find(method => method.formHandler)
-      form must not be beNull
+      form must not be null
     }
   }
 }

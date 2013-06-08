@@ -1,4 +1,4 @@
-package com.scalext.direct.remoting.api
+package com.scalext.direct.remoting
 
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
@@ -13,10 +13,4 @@ case class Rpc(id: Int, action: String, method: String, var data: Any) {
     "tid" -> id,
     "action" -> action,
     "method" -> method)
-}
-
-/** Contains a RPC request and its result
-  */
-case class RpcResult(rpc: Rpc, result: Any) {
-  def toJson = rpc.toJson
 }

@@ -1,7 +1,6 @@
 package com.scalext.direct.dispatcher
 
-import com.scalext.direct.remoting.api.Rpc
-import com.scalext.direct.remoting.api.RpcResult
+import com.scalext.direct.remoting.{RpcResult, Rpc}
 
 trait Dispatcher {
 
