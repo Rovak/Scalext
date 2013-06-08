@@ -17,6 +17,14 @@ object Api extends Controller {
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
     .create()
 
+  /**
+   * Build the javascript API
+   */
+  def buildApi = Action {
+    val result = s"Ext.direct.Manager.addProvider(${Json.stringify(ApiFactory.config.toJson)});";
+    Ok(result).as("text/javascript")
+  }
+
   /** Convert any result to a valid Direct result
     */
   def resultToJson(result: Any): JsValue = result match {

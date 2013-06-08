@@ -27,13 +27,10 @@ Scalext [![Build Status](https://www.travis-ci.org/Rovak/Scalext.png?branch=mast
 scalext.direct.classes="direct.ProfileForm,direct.RegistrationForm,direct.EchoService"
 ```
 
-Generate the Direct Api inside a view by adding the following code:
+Include the javascript file which generates the Direct Api inside a view:
 
 ```scala
-@import play.api.libs.json.Json
-<script type="text/javascript">
-Ext.direct.Manager.addProvider(@Html(Json.stringify(com.scalext.direct.remoting.api.ApiFactory.config.toJson)));
-</script>
+<script type="text/javascript" src="@com.scalext.controllers.routes.Api.buildApi()"></script>
 ```
 
  The Direct Api is now available!
