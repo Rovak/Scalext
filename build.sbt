@@ -1,0 +1,1 @@
+seq(ScctPlugin.instrumentSettings : _*)
