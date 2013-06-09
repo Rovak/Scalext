@@ -5,17 +5,16 @@ import com.scalext.direct.remoting.api._
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.mvc.{Controller, Action}
-import com.scalext.direct.remoting.{RpcResult, Rpc, FormResult}
-import com.scalext.Serialization
+
 
 /** Api Controller
   */
 object Api extends Controller {
 
+  import com.scalext.direct.RPCFactory._
+
   def isDebugMode = play.api.Play.mode == play.api.Mode.Dev
-
   val dispatcher = new ParallelDispatcher(ApiFactory.classes)
-
 
   /** Build the javascript API
     */
@@ -24,69 +23,9 @@ object Api extends Controller {
     Ok(result).as("text/javascript")
   }
 
-  /** Convert any result to a valid Direct result
-    */
-  def resultToJson(result: Any): JsValue = result match {
-    case RpcResult(rpc, data) =>
-      rpc.toJson ++ Json.obj("result" -> resultToJson(data))
-    case FormResult(formResult, success, errors) =>
-      var jsonResult = Json.obj(
-        "success" -> (errors.isEmpty && success),
-        "data" -> resultToJson(formResult))
-      if (!errors.isEmpty)
-        jsonResult += "errors" -> errors.foldLeft(Json.obj()) {
-          case (current, (key, value)) =>
-            current ++ Json.obj(key -> value)
-        }
-      jsonResult
-    case _ =>
-      Serialization.toJson(result)
-  }
-
-  /** Build and execute an RPC request from the given JSON object
-    *
-    * @param rpc a single RPC
-    */
-  def buildRpc(rpc: JsValue): Rpc = {
-    Rpc(
-      id = (rpc \ "tid").as[Int],
-      action = (rpc \ "action").as[String],
-      method = (rpc \ "method").as[String],
-      data = (rpc \ "data") match {
-        case arr: JsArray => arr
-        case _ => Json.arr()
-      })
-  }
-
-  /** Build and execute a RPC request from the given Ext Direct Form Request
-    *
-    * @param post Map with Key => Value
-    */
-  def buildRpc(post: Map[String, Seq[String]]) = {
-
-    // Convert seq to string
-    val postData = post.map(row => row._1 -> row._2.mkString)
-
-    Rpc(
-      id = postData("extTID").toInt,
-      action = postData("extAction"),
-      method = postData("extMethod"),
-      data = Json.arr(Json.toJson(filterExtKeys(postData))))
-  }
-
-  val extKeys = Array("extType", "extUpload", "extMethod", "extTID", "extAction")
-
-  /** Filter post keys which are given by the standard Ext JS Remoting Provider so this data is not being
-    * passed to the direct method which is being called
-    */
-  def filterExtKeys(data: Map[String, String]): Map[String, String] = {
-    data.filterNot(key => extKeys.contains(key._1))
-  }
-
   /** Execute a JSON request
     */
-  def executeApi = Action {
-    request =>
+  def executeApi = Action { request =>
       try {
         val rpcResults = request.contentType.get match {
           // Default JSON
@@ -137,10 +76,4 @@ object Api extends Controller {
             "where" -> ""))
       }
   }
-
-  def buildFormResponse(rpc: String) = {
-    val response = rpc.replace("\"", "\\\"")
-    s"<html><body><textarea>$response</textarea></body></html>"
-  }
-
 }
