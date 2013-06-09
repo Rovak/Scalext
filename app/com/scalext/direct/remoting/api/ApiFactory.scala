@@ -51,8 +51,7 @@ object ApiFactory {
                 method.getAnnotation(classOf[FormHandler]) != null)
             case (list, _) => list
           })
-        }
-
+    }
     actions
   }
 

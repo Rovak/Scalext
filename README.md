@@ -6,7 +6,7 @@ Scalext [![Build Status](https://www.travis-ci.org/Rovak/Scalext.png?branch=mast
 ## Features
 
  * Supports single or batched JSON requests
- * Automatic json serialization of method results
+ * Automatic serialization and deserialization of Ext.Direct actions
  * Direct API configuration using annotations
  * DSL for creating Ext JS objects
  * Parallel execution of batched requests
