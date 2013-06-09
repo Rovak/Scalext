@@ -5,7 +5,7 @@ import org.specs2.mutable._
 
 class ApiFactoryTest extends Specification {
 
-  "The ApiFactory" should {
+  "ApiFactory" should {
 
     "build classes from a comma separated string" in {
       val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
@@ -18,14 +18,14 @@ class ApiFactoryTest extends Specification {
     }
   }
 
-  "formhandlers" should {
+  "Formhandlers created by ApiFactory" should {
 
-    "be visible from apifactory" in {
+    "be visible in the api" in {
       val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
       classes must have key("test.ProfileForm")
     }
 
-    "recieve formhandler is true when generated from apifactory" in {
+    "receive formhandler when generated from apifactory" in {
       val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
       val config = ApiFactory.buildConfigFromClasses(classes)
       val form = config.flatMap(action => action.methods).find(method => method.formHandler)
