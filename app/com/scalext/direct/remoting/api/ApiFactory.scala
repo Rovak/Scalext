@@ -13,7 +13,7 @@ import com.scalext.annotations.FormHandler
 object ApiFactory {
 
   def buildClasses(classList: String): Map[String, Class[_]] = {
-    classList.split(",").foldLeft(Map[String, Class[_]]()) {
+    if (!classList.isEmpty) classList.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
         val cls = Class.forName(className)
         var clsName = cls.getSimpleName
@@ -22,7 +22,7 @@ object ApiFactory {
           clsName = remotable.name()
         }
         map + (clsName -> cls)
-    }
+    } else Map()
   }
 
   /** Returns classes which are configured in the application.conf

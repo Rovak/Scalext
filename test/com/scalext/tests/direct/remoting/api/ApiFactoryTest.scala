@@ -1,7 +1,7 @@
-package com.scalext.tests
+package com.scalext.tests.direct.remoting.api
 
-import com.scalext.direct.remoting.api.ApiFactory
 import org.specs2.mutable._
+import com.scalext.direct.remoting.api.ApiFactory
 
 class ApiFactoryTest extends Specification {
 
@@ -9,12 +9,17 @@ class ApiFactoryTest extends Specification {
 
     "build classes from a comma separated string" in {
       val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
-      classes must have size(1)
+      classes must have size 1
+    }
+
+    "return an empty list when no classes are configured" in {
+      val classes = ApiFactory.buildClasses("")
+      classes must have size 0
     }
 
     "classes must retrieve name from remotable annotation" in {
       val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
-      classes must have key("test.ProfileForm")
+      classes must have key "test.ProfileForm"
     }
   }
 
@@ -22,7 +27,7 @@ class ApiFactoryTest extends Specification {
 
     "be visible in the api" in {
       val classes = ApiFactory.buildClasses("com.scalext.tests.direct.Form")
-      classes must have key("test.ProfileForm")
+      classes must have key "test.ProfileForm"
     }
 
     "receive formhandler when generated from apifactory" in {
