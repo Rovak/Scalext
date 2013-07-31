@@ -12,10 +12,14 @@ import com.scalext.annotations.FormHandler
   */
 object ApiFactory {
 
+  def loadClass(className: String) = {
+    Play.classloader.loadClass(className)
+  }
+
   def buildClasses(classList: String): Map[String, Class[_]] = {
     if (!classList.isEmpty) classList.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
-        val cls = Class.forName(className)
+        val cls = loadClass(className)
         var clsName = cls.getSimpleName
         val remotable = cls.getAnnotation(classOf[Remotable])
         if (remotable != null && !remotable.name().isEmpty) {
