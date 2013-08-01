@@ -13,8 +13,6 @@ object Serialization {
     value match {
       case list: Seq[Any] =>
         Json.parse(gson.toJson(list.toArray[Any]))
-      case map: Map[_, _] =>
-        Json.toJson(map.asInstanceOf[Map[String, String]])
       case null =>
         JsNull
       case _ =>

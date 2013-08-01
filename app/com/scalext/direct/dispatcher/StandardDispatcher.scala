@@ -1,6 +1,5 @@
 package com.scalext.direct.dispatcher
 
-
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
 
@@ -26,7 +25,7 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
    * Dispatch multiple requests
    */
   override def dispatch(rpcs: Seq[Rpc]): Seq[RpcResult] = {
-    rpcs.map(dispatch(_)).toList
+    rpcs.map(dispatch)
   }
 
   /**
@@ -35,7 +34,7 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
   override def dispatch(rpc: Rpc): RpcResult = {
 
     val cls = directClasses(rpc.action)
-    val methodInstance = cls.getDeclaredMethods.find(method => method.getName == rpc.method).get
+    val methodInstance = cls.getDeclaredMethods.find(_.getName == rpc.method).get
 
     val methodParams = methodInstance.getParameterTypes
     var methodArgs = List[Any]()

@@ -19,7 +19,7 @@ object Api extends Controller {
   /** Build the javascript API
     */
   def buildApi = Action {
-    val result = s"Ext.direct.Manager.addProvider(${Json.stringify(ApiFactory.config.toJson)});";
+    val result = s"Ext.direct.Manager.addProvider(${Json.stringify(ApiFactory.config.toJson)});"
     Ok(result).as("text/javascript")
   }
 
@@ -32,7 +32,7 @@ object Api extends Controller {
           case "application/json" =>
             request.body.asJson.get match {
               case JsArray(elements) =>
-                elements.map(buildRpc(_))
+                elements.map(buildRpc)
               case obj: JsObject =>
                 List(buildRpc(obj))
               case _ =>
@@ -60,7 +60,6 @@ object Api extends Controller {
           Ok(Json.toJson(results.map(resultToJson(_))))
         else
           Ok(resultToJson(results.head))
-
       } catch {
         // Debug Mode
         case e: Exception if isDebugMode =>
