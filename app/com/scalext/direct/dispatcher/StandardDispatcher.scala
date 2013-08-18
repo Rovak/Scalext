@@ -7,14 +7,34 @@ import play.api.libs.json.JsArray
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import com.scalext.direct.remoting.{RpcResult, Rpc}
+import com.scalext.direct.controller.DefaultControllerFactory
+import play.api.Play
+import com.scalext.json.MapSerializer
 
 /**
  * Default Dispatcher
  */
 class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatcher {
 
-  val classInstances = directClasses.map {
-    case (name, cls) => name -> cls.newInstance()
+  // Retrieve the global object
+  lazy val apiClassFactory: ScalextClassBuilder = {
+    try {
+      import scala.reflect.runtime.universe
+      import play.api.Play.current
+      val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
+      val configuredGlobal = Play.configuration.getString("global").getOrElse("Global")
+      val module = runtimeMirror.staticModule(configuredGlobal)
+      val obj = runtimeMirror.reflectModule(module)
+      obj.instance.asInstanceOf[ScalextClassBuilder]
+    }
+    catch {
+      case e: Exception => new DefaultControllerFactory()
+    }
+
+  }
+
+  lazy val classInstances = directClasses.map {
+    case (name, cls) => name -> apiClassFactory.buildClass(cls)
   }
 
   val gson = new GsonBuilder()
@@ -24,14 +44,14 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
   /**
    * Dispatch multiple requests
    */
-  override def dispatch(rpcs: Seq[Rpc]): Seq[RpcResult] = {
+  override def dispatch(rpcs: Seq[Rpc]) = {
     rpcs.map(dispatch)
   }
 
   /**
    * Dispatch a single RPC
    */
-  override def dispatch(rpc: Rpc): RpcResult = {
+  override def dispatch(rpc: Rpc) = {
 
     val cls = directClasses(rpc.action)
     val methodInstance = cls.getDeclaredMethods.find(_.getName == rpc.method).get

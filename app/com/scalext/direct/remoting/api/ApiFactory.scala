@@ -1,7 +1,7 @@
 package com.scalext.direct.remoting.api
 
 import play.api.Play.current
-import play.api.Play
+import play.api.{DefaultGlobal, Play}
 import com.scalext.annotations.Remotable
 import com.scalext.annotations.FormHandler
 
@@ -17,8 +17,9 @@ object ApiFactory {
     Play.classloader.loadClass(className)
   }
 
-  def buildClasses(classList: String): Map[String, Class[_]] = {
-    if (!classList.isEmpty) classList.split(",").foldLeft(Map[String, Class[_]]()) {
+  def buildClasses(classList: String) = {
+    if (classList.isEmpty) Map[String, Class[_]] ()
+    else classList.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
         val cls = loadClass(className)
         var clsName = cls.getSimpleName
@@ -27,13 +28,13 @@ object ApiFactory {
           clsName = remotable.name()
         }
         map + (clsName -> cls)
-    } else Map()
+    }
   }
 
   /**
    * Returns classes which are configured in the application.conf
    */
-  def classes: Map[String, Class[_]] = {
+  def classes = {
     buildClasses(Play.configuration.getString("scalext.direct.classes").getOrElse(""))
   }
 
