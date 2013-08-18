@@ -44,9 +44,7 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
   /**
    * Dispatch multiple requests
    */
-  override def dispatch(rpcs: Seq[Rpc]) = {
-    rpcs.map(dispatch)
-  }
+  override def dispatch(rpcs: Seq[Rpc]) = rpcs.map(dispatch)
 
   /**
    * Dispatch a single RPC
