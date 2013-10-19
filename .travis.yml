@@ -1,4 +1,6 @@
 language: scala
+scala:
+  - 2.10.3
 env:
   - PLAY_VERSION=2.2.0
 before_script:
