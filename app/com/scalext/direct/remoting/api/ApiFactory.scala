@@ -4,6 +4,7 @@ import play.api.Play.current
 import play.api.Play
 import com.scalext.annotations._
 import scala.reflect.runtime._
+import com.scalext.util.Reflection
 
 /**
  * Builds Direct API configuration
@@ -13,32 +14,23 @@ import scala.reflect.runtime._
  */
 object ApiFactory {
 
-  val runtimeMirror = universe.runtimeMirror(Play.classloader)
+  val classLoader = Play.classloader
+  val runtimeMirror = universe.runtimeMirror(classLoader)
 
-  def loadClass(className: String) = {
-    Play.classloader.loadClass(className)
-  }
+  def loadClass(className: String) = classLoader.loadClass(className)
 
   def buildClasses(classList: String): Map[String, Class[_]] = {
     if (!classList.isEmpty) classList.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
         val cls = loadClass(className)
-        var clsName = cls.getSimpleName
-        annotation(runtimeMirror.classSymbol(cls).toType, universe.typeOf[Remotable]).map {
-          annotation =>
-            clsName = universe.show(annotation.scalaArgs.head).stripPrefix("\"").stripSuffix("\"")
-        }
+        val clsName = Reflection.annotation(runtimeMirror.classSymbol(cls).toType, universe.typeOf[Remotable]).map(x => Reflection.show(x)).getOrElse(cls.getSimpleName)
         map + (clsName -> cls)
     } else Map()
   }
 
-  def annotations[T: universe.TypeTag](cls: universe.Type) = cls.typeSymbol.annotations
-
-  def annotation[Z](cls: universe.Type, annotationType: universe.Type) = annotations(cls).find(_.tpe == annotationType)
-
-  def methods(cls: universe.Type) = cls.declarations
-
-  def method(cls: universe.Type, name: String) = cls.declarations.find(_.fullName == name)
+  def methodvalid(methodType: universe.MethodSymbol) = {
+    methodType.annotations.exists(x => (x.tpe == universe.typeOf[Remotable]) || (x.tpe == universe.typeOf[FormHandler]))
+  }
 
   /**
    * Returns classes which are configured in the application.conf
@@ -53,13 +45,14 @@ object ApiFactory {
   def buildConfigFromClasses(classes: Map[String, Class[_]]) = {
     classes.map {
       case (className, cls) =>
-        Action(className, methods(runtimeMirror.classSymbol(cls).toType).foldLeft(List[Method]()) {
-          case (list, methodRef) if methodRef.annotations.exists(x => (x.tpe == universe.typeOf[Remotable]) || (x.tpe == universe.typeOf[FormHandler])) =>
+        val methods = Reflection.methods(runtimeMirror.classSymbol(cls).toType).foldLeft(List[Method]()) {
+          case (list, methodRef) if methodvalid(methodRef.asMethod) =>
             val methodRef2 = methodRef.asMethod
-            val methodName = methodRef2.annotations.find(_.tpe == universe.typeOf[Remotable]).map(x => universe.show(x.scalaArgs.head).stripPrefix("\"").stripSuffix("\"")).getOrElse(methodRef.name.decoded)
+            val methodName = methodRef2.annotations.find(_.tpe == universe.typeOf[Remotable]).map(x => Reflection.show(x.scalaArgs.head)).getOrElse(methodRef.name.decoded)
             list :+ Method(methodName, methodRef2.paramss.length, methodRef2.annotations.exists(_.tpe == classOf[FormHandler]))
           case (list, _) => list
-        })
+        }
+        Action(className, methods)
     }
   }
 
