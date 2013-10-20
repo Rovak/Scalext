@@ -14,6 +14,8 @@ import com.scalext.util.Reflection
  */
 object ApiFactory {
 
+  import com.scalext.util.Reflection._
+
   val classLoader = Play.classloader
   val runtimeMirror = universe.runtimeMirror(classLoader)
 
@@ -23,14 +25,11 @@ object ApiFactory {
     if (!classList.isEmpty) classList.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
         val cls = loadClass(className)
-        val clsName = Reflection.annotation(runtimeMirror.classSymbol(cls).toType, universe.typeOf[Remotable]).map(x => Reflection.show(x)).getOrElse(cls.getSimpleName)
+        val clsName = Reflection.annotation(runtimeMirror.classSymbol(cls).toType, universe.typeOf[Remotable]).map(x => Reflection.show(x.scalaArgs.head)).getOrElse(cls.getSimpleName)
         map + (clsName -> cls)
     } else Map()
   }
 
-  def methodvalid(methodType: universe.MethodSymbol) = {
-    methodType.annotations.exists(x => (x.tpe == universe.typeOf[Remotable]) || (x.tpe == universe.typeOf[FormHandler]))
-  }
 
   /**
    * Returns classes which are configured in the application.conf
@@ -45,14 +44,13 @@ object ApiFactory {
   def buildConfigFromClasses(classes: Map[String, Class[_]]) = {
     classes.map {
       case (className, cls) =>
-        val methods = Reflection.methods(runtimeMirror.classSymbol(cls).toType).foldLeft(List[Method]()) {
-          case (list, methodRef) if methodvalid(methodRef.asMethod) =>
+        Action(className, methods(runtimeMirror.classSymbol(cls).toType).foldLeft(List[Method]()) {
+          case (list, methodRef) if methodRef.annotations.exists(x => (x.tpe == universe.typeOf[Remotable]) || (x.tpe == universe.typeOf[FormHandler])) =>
             val methodRef2 = methodRef.asMethod
-            val methodName = methodRef2.annotations.find(_.tpe == universe.typeOf[Remotable]).map(x => Reflection.show(x.scalaArgs.head)).getOrElse(methodRef.name.decoded)
+            val methodName = methodRef2.annotations.find(_.tpe == universe.typeOf[Remotable]).map(x => universe.show(x.scalaArgs.head).stripPrefix("\"").stripSuffix("\"")).getOrElse(methodRef.name.decoded)
             list :+ Method(methodName, methodRef2.paramss.length, methodRef2.annotations.exists(_.tpe == classOf[FormHandler]))
           case (list, _) => list
-        }
-        Action(className, methods)
+        })
     }
   }
 
