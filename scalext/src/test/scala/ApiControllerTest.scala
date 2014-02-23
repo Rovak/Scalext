@@ -3,7 +3,6 @@ package com.scalext.tests
 import org.specs2.mutable._
 import play.api.libs.json.JsArray
 
-
 class ApiControllerTest extends Specification {
 
   "ApiController" should {

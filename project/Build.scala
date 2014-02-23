@@ -19,7 +19,8 @@ object ApplicationBuild extends Build {
         "commons-io" % "commons-io" % "2.1",
         "org.apache.commons" % "commons-lang3" % "3.1",
         "com.google.code.gson" % "gson" % "2.2.3",
-        "com.typesafe.play" %% "play-json" % "2.2.1"
+        "com.typesafe.play" %% "play-json" % "2.2.1",
+        "com.typesafe" %% "config" % "1.2.0"
       )
     ))
 
