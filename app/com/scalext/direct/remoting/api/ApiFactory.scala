@@ -47,7 +47,9 @@ object ApiFactory {
         Action(className, methods(runtimeMirror.classSymbol(cls).toType).foldLeft(List[Method]()) {
           case (list, methodRef) if methodRef.annotations.exists(x => (x.tpe == universe.typeOf[Remotable]) || (x.tpe == universe.typeOf[FormHandler])) =>
             val methodRef2 = methodRef.asMethod
-            val methodName = methodRef2.annotations.find(_.tpe == universe.typeOf[Remotable]).map(x => universe.show(x.scalaArgs.head).stripPrefix("\"").stripSuffix("\"")).getOrElse(methodRef.name.decoded)
+            val methodName = methodRef2.annotations
+              .find(_.tpe == universe.typeOf[Remotable]).map(x => universe.show(x.scalaArgs.head).stripPrefix("\"").stripSuffix("\""))
+              .getOrElse(methodRef.name.toString)
             list :+ Method(methodName, methodRef2.paramss.length, methodRef2.annotations.exists(_.tpe == classOf[FormHandler]))
           case (list, _) => list
         })
