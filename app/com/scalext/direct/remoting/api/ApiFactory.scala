@@ -2,8 +2,9 @@ package com.scalext.direct.remoting.api
 
 import play.api.Play.current
 import play.api.Play
-import com.scalext.annotations.Remotable
-import com.scalext.annotations.FormHandler
+import com.scalext.annotations._
+import scala.reflect.runtime._
+import com.scalext.util.Reflection
 
 /**
  * Builds Direct API configuration
@@ -13,22 +14,22 @@ import com.scalext.annotations.FormHandler
  */
 object ApiFactory {
 
-  def loadClass(className: String) = {
-    Play.classloader.loadClass(className)
-  }
+  import com.scalext.util.Reflection._
+
+  val classLoader = Play.classloader
+  val runtimeMirror = universe.runtimeMirror(classLoader)
+
+  def loadClass(className: String) = classLoader.loadClass(className)
 
   def buildClasses(classList: String): Map[String, Class[_]] = {
     if (!classList.isEmpty) classList.split(",").foldLeft(Map[String, Class[_]]()) {
       case (map, className) =>
         val cls = loadClass(className)
-        var clsName = cls.getSimpleName
-        val remotable = cls.getAnnotation(classOf[Remotable])
-        if (remotable != null && !remotable.name().isEmpty) {
-          clsName = remotable.name()
-        }
+        val clsName = Reflection.annotation(runtimeMirror.classSymbol(cls).toType, universe.typeOf[Remotable]).map(x => Reflection.show(x.scalaArgs.head)).getOrElse(cls.getSimpleName)
         map + (clsName -> cls)
     } else Map()
   }
+
 
   /**
    * Returns classes which are configured in the application.conf
@@ -41,18 +42,15 @@ object ApiFactory {
    * Build configuration from the given classes
    */
   def buildConfigFromClasses(classes: Map[String, Class[_]]) = {
-    classes.map { case (className, cls) =>
-        Action(className, cls.getDeclaredMethods.foldLeft(List[Method]()) {
-            // Only @Remotable methods
-            case (list, method: java.lang.reflect.Method) if method.getAnnotation(classOf[Remotable]) != null || method.getAnnotation(classOf[FormHandler]) != null =>
-              val remotable = method.getAnnotation(classOf[Remotable])
-              val methodName = if (remotable != null && !remotable.name().isEmpty) remotable.name() else method.getName
-              list :+ Method(
-                methodName,
-                method.getParameterTypes.length,
-                method.getAnnotation(classOf[FormHandler]) != null)
-            case (list, _) => list
-          })
+    classes.map {
+      case (className, cls) =>
+        Action(className, methods(runtimeMirror.classSymbol(cls).toType).foldLeft(List[Method]()) {
+          case (list, methodRef) if methodRef.annotations.exists(x => (x.tpe == universe.typeOf[Remotable]) || (x.tpe == universe.typeOf[FormHandler])) =>
+            val methodRef2 = methodRef.asMethod
+            val methodName = methodRef2.annotations.find(_.tpe == universe.typeOf[Remotable]).map(x => universe.show(x.scalaArgs.head).stripPrefix("\"").stripSuffix("\"")).getOrElse(methodRef.name.decoded)
+            list :+ Method(methodName, methodRef2.paramss.length, methodRef2.annotations.exists(_.tpe == classOf[FormHandler]))
+          case (list, _) => list
+        })
     }
   }
 
