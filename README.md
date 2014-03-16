@@ -4,7 +4,7 @@ Scalext
 [![Build Status](https://www.travis-ci.org/Rovak/Scalext.png?branch=master)](https://www.travis-ci.org/Rovak/Scalext)
 [![Coverage Status](https://coveralls.io/repos/Rovak/Scalext/badge.png?branch=master)](https://coveralls.io/r/Rovak/Scalext?branch=master)
 
- Ext JS Driver for Play Framework 2.1
+ Ext JS Driver for Play Framework 2.2.2
 
 ## Features
 
