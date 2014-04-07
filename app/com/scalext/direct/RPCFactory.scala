@@ -1,7 +1,7 @@
 package com.scalext.direct
 
 import play.api.libs.json.{JsArray, Json, JsValue}
-import com.scalext.direct.remoting.{Rpc, FormResult, RpcResult}
+import com.scalext.direct.remoting.{RpcError, Rpc, FormResult, RpcResult}
 import com.scalext.Serialization
 
 object RPCFactory {
@@ -11,6 +11,8 @@ object RPCFactory {
   /** Convert any result to a valid Direct result
     */
   def resultToJson(result: Any): JsValue = result match {
+    case RpcResult(rpc, RpcError(error)) =>
+      rpc.toJson ++ Json.obj("error" -> error)
     case RpcResult(rpc, data) =>
       rpc.toJson ++ Json.obj("result" -> resultToJson(data))
     case FormResult(formResult, success, errors) =>

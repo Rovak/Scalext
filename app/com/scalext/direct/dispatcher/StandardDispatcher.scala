@@ -6,52 +6,54 @@ import com.google.gson.GsonBuilder
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import com.scalext.direct.remoting.{RpcResult, Rpc}
+import com.scalext.direct.remoting.{RpcError, RpcResult, Rpc}
 
 /**
  * Default Dispatcher
  */
 class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatcher {
 
-  val classInstances = directClasses.map {
-    case (name, cls) => name -> cls.newInstance()
-  }
-
   val gson = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
     .create()
 
   /**
+   * Retrieve a new class for the given action
+   *
+   * @param actionName action
+   * @return class instance for the given action
+   */
+  def getClassInstanceForAction(actionName: String) = {
+    directClasses.get(actionName).map(cls => cls.newInstance())
+  }
+
+
+  /**
    * Dispatch a single RPC
    */
   override def dispatch(rpc: Rpc): RpcResult = {
+    getClassInstanceForAction(rpc.action).map { classInstance =>
+      classInstance.getClass.getDeclaredMethods.find(_.getName == rpc.method).map { methodInstance =>
+        val methodParams = methodInstance.getParameterTypes
 
-    val cls = directClasses(rpc.action)
-    val methodInstance = cls.getDeclaredMethods.find(_.getName == rpc.method).get
-
-    val methodParams = methodInstance.getParameterTypes
-    var methodArgs = List[Any]()
-
-    if (!directClasses.contains(rpc.action)) {
-      throw new Exception(s"Action ${rpc.action} not found")
-    }
-
-    methodArgs = rpc.data match {
-      case JsArray(elements) =>
-        elements.zipWithIndex.foldLeft(List[Any]()) {
-          case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
-      }
-      case seq: Seq[_] =>
-        seq.zipWithIndex.foldLeft(List[Any]()) {
-          case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
+        val methodArgs = rpc.data match {
+          case JsArray(elements) =>
+            elements.zipWithIndex.foldLeft(List[Any]()) {
+              case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
+            }
+          case seq: Seq[_] =>
+            seq.zipWithIndex.foldLeft(List[Any]()) {
+              case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
+            }
         }
-    }
 
-    val methodResult = methodInstance.invoke(
-      classInstances(rpc.action),
-      methodArgs.asInstanceOf[Seq[Object]]: _*)
+        val methodResult = methodInstance.invoke(
+          classInstance,
+          methodArgs.asInstanceOf[Seq[Object]]: _*)
 
-    RpcResult(rpc, methodResult)
+        RpcResult(rpc, methodResult)
+      }.getOrElse(RpcResult(rpc, RpcError(s"Method: ${rpc.method} not found on class ${classInstance.getClass.getName}")))
+    }.getOrElse(RpcResult(rpc, RpcError(s"Class not found for action ${rpc.action}")))
   }
 
   /**
