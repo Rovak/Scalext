@@ -27,33 +27,17 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
     directClasses.get(actionName).map(cls => cls.newInstance())
   }
 
-
   /**
-   * Dispatch a single RPC
+   * Convert RPC data to method parameters
+   *
+   * @param args arguments from the RPC call
+   * @param methodParams method Instance getParameterTypes
+   * @return resulting paramters
    */
-  override def dispatch(rpc: Rpc): RpcResult = {
-    getClassInstanceForAction(rpc.action).map { classInstance =>
-      classInstance.getClass.getDeclaredMethods.find(_.getName == rpc.method).map { methodInstance =>
-        val methodParams = methodInstance.getParameterTypes
-
-        val methodArgs = rpc.data match {
-          case JsArray(elements) =>
-            elements.zipWithIndex.foldLeft(List[Any]()) {
-              case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
-            }
-          case seq: Seq[_] =>
-            seq.zipWithIndex.foldLeft(List[Any]()) {
-              case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
-            }
-        }
-
-        val methodResult = methodInstance.invoke(
-          classInstance,
-          methodArgs.asInstanceOf[Seq[Object]]: _*)
-
-        RpcResult(rpc, methodResult)
-      }.getOrElse(RpcResult(rpc, RpcError(s"Method: ${rpc.method} not found on class ${classInstance.getClass.getName}")))
-    }.getOrElse(RpcResult(rpc, RpcError(s"Class not found for action ${rpc.action}")))
+  def rpcData2MethodParams(args: Seq[_], methodParams: Array[Class[_]]) = {
+    args.zipWithIndex.foldLeft(List[Any]()) {
+      case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
+    }
   }
 
   /**
@@ -65,5 +49,26 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
       case jsval: JsValue => gson.fromJson(Json.stringify(jsval), paramType)
       case _ => param
     }
+  }
+
+  /**
+   * Dispatch a single RPC
+   */
+  override def dispatch(rpc: Rpc): RpcResult = {
+    getClassInstanceForAction(rpc.action).map { classInstance =>
+      classInstance.getClass.getDeclaredMethods.find(_.getName == rpc.method).map { methodInstance =>
+        val methodParams = methodInstance.getParameterTypes
+        val methodArgs = rpc.data match {
+          case JsArray(elements) => rpcData2MethodParams(elements, methodParams)
+          case seq: Seq[_] => rpcData2MethodParams(seq, methodParams)
+        }
+
+        val methodResult = methodInstance.invoke(
+          classInstance,
+          methodArgs.asInstanceOf[Seq[Object]]: _*)
+
+        RpcResult(rpc, methodResult)
+      }.getOrElse(RpcResult(rpc, RpcError(s"Method: ${rpc.method} not found on class ${classInstance.getClass.getName}")))
+    }.getOrElse(RpcResult(rpc, RpcError(s"Class not found for action ${rpc.action}")))
   }
 }
