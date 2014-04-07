@@ -22,13 +22,6 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
     .create()
 
   /**
-   * Dispatch multiple requests
-   */
-  override def dispatch(rpcs: Seq[Rpc]): Seq[RpcResult] = {
-    rpcs.map(dispatch)
-  }
-
-  /**
    * Dispatch a single RPC
    */
   override def dispatch(rpc: Rpc): RpcResult = {
@@ -39,21 +32,19 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
     val methodParams = methodInstance.getParameterTypes
     var methodArgs = List[Any]()
 
+    if (!directClasses.contains(rpc.action)) {
+      throw new Exception(s"Action ${rpc.action} not found")
+    }
+
     methodArgs = rpc.data match {
-      case JsArray(elements) => {
+      case JsArray(elements) =>
         elements.zipWithIndex.foldLeft(List[Any]()) {
           case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
-        }
       }
-
       case seq: Seq[_] =>
         seq.zipWithIndex.foldLeft(List[Any]()) {
           case (current, (value, index)) => current :+ valueToParam(value, methodParams(index))
         }
-    }
-
-    if (!directClasses.contains(rpc.action)) {
-      throw new Exception(s"Action ${rpc.action} not found")
     }
 
     val methodResult = methodInstance.invoke(

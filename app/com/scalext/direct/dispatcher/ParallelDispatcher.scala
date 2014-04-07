@@ -14,6 +14,6 @@ class ParallelDispatcher(directClasses: Map[String, Class[_]]) extends StandardD
   override def dispatch(rpcs: Seq[Rpc]): Seq[RpcResult] = {
     val rpcList = rpcs.toParArray
     rpcList.tasksupport = new ThreadPoolTaskSupport()
-    rpcList.map(dispatch(_)).toList
+    rpcList.map(dispatch).toList
   }
 }
