@@ -42,13 +42,24 @@ object ApiFactory {
    * Build configuration from the given classes
    */
   def buildConfigFromClasses(classes: Map[String, Class[_]]) = {
+
+    def isApiAnnotation(x: universe.Annotation): Boolean = (x.tpe == universe.typeOf[Remotable]) || (x.tpe == universe.typeOf[FormHandler])
+
+    def getMethodName(methodName: String): Option[String] =
+      if (methodName.contains("<init>")) None
+      else Option(methodName.stripPrefix("\"").stripSuffix("\""))
+
     classes.map {
       case (className, cls) =>
         Action(className, methods(runtimeMirror.classSymbol(cls).toType).foldLeft(List[Method]()) {
-          case (list, methodRef) if methodRef.annotations.exists(x => (x.tpe == universe.typeOf[Remotable]) || (x.tpe == universe.typeOf[FormHandler])) =>
+          case (list, methodRef) if methodRef.annotations.exists(isApiAnnotation) =>
             val methodRef2 = methodRef.asMethod
-            val methodName = methodRef2.annotations.find(_.tpe == universe.typeOf[Remotable]).map(x => universe.show(x.scalaArgs.head).stripPrefix("\"").stripSuffix("\"")).getOrElse(methodRef.name.decoded)
-            list :+ Method(methodName, methodRef2.paramss.length, methodRef2.annotations.exists(_.tpe == classOf[FormHandler]))
+            val methodName = methodRef2.annotations.find(_.tpe == universe.typeOf[Remotable]).flatMap { x =>
+              getMethodName(universe.show(x.scalaArgs.head))
+            }.getOrElse(methodRef.name.decoded)
+            val isFormHandler = methodRef2.annotations.exists(_.tpe == classOf[FormHandler])
+            val numberOfParameters = methodRef2.paramss.head.size
+            list :+ Method(methodName, numberOfParameters, isFormHandler)
           case (list, _) => list
         })
     }
