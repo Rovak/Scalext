@@ -41,7 +41,10 @@ class StandardDispatcher(directClasses: Map[String, Class[_]]) extends Dispatche
   }
 
   /**
-   * Value to param
+   * Deserialize the given parameters to a object which can be used when calling a method
+   * @param param param
+   * @param paramType type of the param
+   * @return deserialized object
    */
   def valueToParam(param: Any, paramType: Class[_]): Any = {
     param match {
